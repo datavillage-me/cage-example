@@ -17,4 +17,5 @@ def write_data(data: dict):
   
   gcs_conn.export_duckdb("export_data")
   audit_log("exported data", LogLevel.INFO)
+  os.remove(tmp_file)
   pass
