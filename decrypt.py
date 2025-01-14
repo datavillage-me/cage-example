@@ -5,6 +5,7 @@ def decrypt_file(location: str, expected: dict | None):
   files = {'message': open(location, "rb")}
   s = SecretManager()
   resp = s.decrypt(files)
+  audit_log("successfully decrypted file", LogLevel.INFO)
   resp_obj = json.loads(resp)
   if expected:
     equal = json.dumps(resp_obj, sort_keys=True) == json.dumps(expected, sort_keys=True)
