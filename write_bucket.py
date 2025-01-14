@@ -25,6 +25,7 @@ def write_data(data: dict):
   pass
 
 def write_signed_data(data: dict):
+  data['timestamp'] = datetime.now().isoformat()
   tmp_file = __create_tmp_json(data)
   gcs_conn, duckdb_conn = gcs.connect_gcs(config.OUTPUT_CONNECTOR)
 
