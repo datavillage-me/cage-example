@@ -3,6 +3,9 @@ from dv_utils import audit_log, LogLevel, set_event
 import read_space
 import read_bucket
 import write_bucket
+import decrypt
+import os
+import config
 
 def event_processor(evt: dict):
   """
@@ -19,6 +22,9 @@ def event_processor(evt: dict):
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     should_download = evt.get("download", False)
     write_bucket.write_signed_data(evt["data"], should_download)
+  elif evt["type"] == "EX_DECRYPT_FILE":
+    expected = evt.get("expected", None)
+    decrypt.decrypt_file(evt["path"], expected)
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -62,7 +68,17 @@ if __name__ == "__main__":
     }
   }
 
+  evt_decrypt_file = {
+    "type": "EX_DECRYPT_FILE",
+    "path": os.path.join(config.DATA_FOLDER, "message"),
+    "expected": {
+      "super": "secret",
+      "json": "file"
+    }
+  }
+
   # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
-  dispatch_event_local(evt_write_bucket_signed)
+  # dispatch_event_local(evt_write_bucket_signed)
+  dispatch_event_local(evt_decrypt_file)
