@@ -2,10 +2,9 @@ name: Release Docker Images
 
 on:
   push:
-    branches:
-      - main
-      - production
-      - acceptance
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
 
 env:
   REGISTRY: ghcr.io
@@ -41,7 +40,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=pep440,pattern={{version}}
-            type=ref,event=branch
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
