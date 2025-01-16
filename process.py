@@ -16,6 +16,9 @@ def event_processor(evt: dict):
     read_bucket.read_file()
   elif evt["type"] == "EX_WRITE_BUCKET":
     write_bucket.write_data(evt["data"])
+  elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
+    should_download = evt.get("download", False)
+    write_bucket.write_signed_data(evt["data"], should_download)
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -50,6 +53,16 @@ if __name__ == "__main__":
     }
   }
 
+  evt_write_bucket_signed = {
+    "type": "EX_WRITE_BUCKET_SIGNED",
+    "download": True,
+    "data": {
+      "hello": "world",
+      "signed": "data"
+    }
+  }
+
   # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_bucket)
-  dispatch_event_local(evt_write_bucket)
+  # dispatch_event_local(evt_write_bucket)
+  dispatch_event_local(evt_write_bucket_signed)
