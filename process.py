@@ -1,6 +1,7 @@
 from dv_utils import audit_log, LogLevel, set_event
 
 import read_space
+import read_bucket
 
 def event_processor(evt: dict):
   """
@@ -10,9 +11,10 @@ def event_processor(evt: dict):
   audit_log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
-  
-  audit_log("done processing event", LogLevel.INFO)
+  elif evt["type"] == "EX_READ_BUCKET":
+    read_bucket.read_file()
 
+  audit_log("done processing event", LogLevel.INFO)
 
 
 
@@ -29,7 +31,13 @@ if __name__ == "__main__":
   Only for local use
   Test events without a listener or redis queue set up
   """
-  evt = {
+  evt_read_space = {
     "type": "EX_READ_SPACE"
   }
-  dispatch_event_local(evt)
+
+  evt_read_bucket = {
+    "type": "EX_READ_BUCKET"
+  }
+
+  # dispatch_event_local(evt_read_space)
+  dispatch_event_local(evt_read_bucket)

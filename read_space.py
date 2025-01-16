@@ -3,7 +3,7 @@ import requests
 from dv_utils import audit_log, LogLevel
 
 def print_space_info():
-  endpoint = f"{config.CONTROL_PLANE_URL}/collaboration-spaces/{config.DV_APP_ID}"
+  endpoint = f"{config.CONTROL_PLANE_URL}/collaboration-spaces/{config.DV_CAGE_ID}"
   response = requests.get(endpoint, headers={'Authorization': f"Bearer {config.DV_TOKEN}"})
   if not response.ok:
     audit_log(f"could not get collaboration space. Got [{response.status_code}]: {response.text}", LogLevel.ERROR)
