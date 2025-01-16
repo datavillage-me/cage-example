@@ -15,14 +15,19 @@ def event_processor(evt: dict):
   audit_log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
+
   elif evt["type"] == "EX_READ_BUCKET":
     credentials = evt["credentials"]
     read_bucket.read_file(credentials["keyId"], credentials["secret"])
+
   elif evt["type"] == "EX_WRITE_BUCKET":
-    write_bucket.write_data(evt["data"])
+    credentials = evt["credentials"]
+    write_bucket.write_data(evt["data"], credentials["keyId"], credentials["secret"])
+
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     should_download = evt.get("download", False)
     write_bucket.write_signed_data(evt["data"], should_download)
+
   elif evt["type"] == "EX_DECRYPT_FILE":
     expected = evt.get("expected", None)
     decrypt.decrypt_file(evt["path"], expected)
@@ -91,7 +96,7 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
-  dispatch_event_local(evt_read_bucket)
-  # dispatch_event_local(evt_write_bucket)
+  # dispatch_event_local(evt_read_bucket)
+  dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
   # dispatch_event_local(evt_decrypt_file)

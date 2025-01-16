@@ -12,10 +12,10 @@ def __create_tmp_json(data: dict) -> str:
   
   return tmp_file
 
-def write_data(data: dict):
+def write_data(data: dict, key_id: str, secret: str):
   data['timestamp'] = datetime.now().isoformat()
   tmp_file = __create_tmp_json(data)
-  gcs_conn, duckdb_conn = gcs.connect_gcs(config.OUTPUT_CONNECTOR)
+  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
 
   duckdb_conn.sql(f"CREATE TABLE export_data AS SELECT * FROM read_json('{tmp_file}')")
   
