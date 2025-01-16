@@ -24,10 +24,10 @@ def write_data(data: dict, key_id: str, secret: str):
   os.remove(tmp_file)
   pass
 
-def write_signed_data(data: dict, should_download: bool):
+def write_signed_data(data: dict, should_download: bool, key_id: str, secret: str):
   data['timestamp'] = datetime.now().isoformat()
   tmp_file = __create_tmp_json(data)
-  gcs_conn, duckdb_conn = gcs.connect_gcs(config.OUTPUT_CONNECTOR)
+  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
 
   duckdb_conn.sql(f"CREATE TABLE signed_data AS SELECT * FROM read_json('{tmp_file}')")
 

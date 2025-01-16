@@ -26,7 +26,8 @@ def event_processor(evt: dict):
 
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     should_download = evt.get("download", False)
-    write_bucket.write_signed_data(evt["data"], should_download)
+    credentials = evt["credentials"]
+    write_bucket.write_signed_data(evt["data"], should_download, credentials["keyId"], credentials["secret"])
 
   elif evt["type"] == "EX_DECRYPT_FILE":
     expected = evt.get("expected", None)
