@@ -2,6 +2,7 @@ from dv_utils import audit_log, LogLevel, set_event
 
 import read_space
 import read_bucket
+import write_bucket
 
 def event_processor(evt: dict):
   """
@@ -13,6 +14,8 @@ def event_processor(evt: dict):
     read_space.print_space_info()
   elif evt["type"] == "EX_READ_BUCKET":
     read_bucket.read_file()
+  elif evt["type"] == "EX_WRITE_BUCKET":
+    write_bucket.write_data(evt["data"])
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -39,5 +42,14 @@ if __name__ == "__main__":
     "type": "EX_READ_BUCKET"
   }
 
+  evt_write_bucket = {
+    "type": "EX_WRITE_BUCKET",
+    "data": {
+      "hello": "world",
+      "from": "cage"
+    }
+  }
+
   # dispatch_event_local(evt_read_space)
-  dispatch_event_local(evt_read_bucket)
+  # dispatch_event_local(evt_read_bucket)
+  dispatch_event_local(evt_write_bucket)
