@@ -16,7 +16,8 @@ def event_processor(evt: dict):
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
   elif evt["type"] == "EX_READ_BUCKET":
-    read_bucket.read_file()
+    credentials = evt["credentials"]
+    read_bucket.read_file(credentials["keyId"], credentials["secret"])
   elif evt["type"] == "EX_WRITE_BUCKET":
     write_bucket.write_data(evt["data"])
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
@@ -48,11 +49,19 @@ if __name__ == "__main__":
   }
 
   evt_read_bucket = {
-    "type": "EX_READ_BUCKET"
+    "type": "EX_READ_BUCKET",
+    "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    }
   }
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
+      "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    },
     "data": {
       "hello": "world",
       "from": "cage"
@@ -62,6 +71,10 @@ if __name__ == "__main__":
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
     "download": True,
+    "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    },
     "data": {
       "hello": "world",
       "signed": "data"
@@ -78,7 +91,7 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
-  # dispatch_event_local(evt_read_bucket)
+  dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  dispatch_event_local(evt_decrypt_file)
+  # dispatch_event_local(evt_decrypt_file)
