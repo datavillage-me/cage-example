@@ -2,7 +2,7 @@ import os
 
 DATA_FOLDER="data/input"
 
-ALGO_VERSION = '0.0.1'
+ALGO_VERSION = '0.4.0'
 DV_TOKEN = os.environ['DV_TOKEN']
 CONTROL_PLANE_URL = os.environ['CONTROL_PLANE_URL']
 DV_CAGE_ID = os.environ['DV_CAGE_ID']
