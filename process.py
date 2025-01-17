@@ -101,7 +101,7 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
-  # dispatch_event_local(evt_read_bucket)
+  dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  dispatch_event_local(evt_decrypt_file)
+  # dispatch_event_local(evt_decrypt_file)
