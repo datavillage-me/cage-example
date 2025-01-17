@@ -7,11 +7,15 @@ import os
 
 def write_data(data: dict, key_id: str, secret: str):
   data['timestamp'] = datetime.now().isoformat()
+  audit_log("creating tmp file")
   tmp_file = util.create_tmp_json(data)
+  audit_log("connecting to gcs")
   gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
 
+  audit_log("create duckdb table")
   duckdb_conn.sql(f"CREATE TABLE export_data AS SELECT * FROM read_json('{tmp_file}')")
   
+  audit_log("export data to gcs")
   gcs_conn.export_duckdb("export_data")
   audit_log("exported data", LogLevel.INFO)
   os.remove(tmp_file)
