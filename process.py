@@ -15,16 +15,24 @@ def event_processor(evt: dict):
   audit_log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
+
   elif evt["type"] == "EX_READ_BUCKET":
-    read_bucket.read_file()
+    credentials = evt["credentials"]
+    read_bucket.read_file(credentials["keyId"], credentials["secret"])
+
   elif evt["type"] == "EX_WRITE_BUCKET":
-    write_bucket.write_data(evt["data"])
+    credentials = evt["credentials"]
+    write_bucket.write_data(evt["data"], credentials["keyId"], credentials["secret"])
+
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     should_download = evt.get("download", False)
-    write_bucket.write_signed_data(evt["data"], should_download)
+    credentials = evt["credentials"]
+    write_bucket.write_signed_data(evt["data"], should_download, credentials["keyId"], credentials["secret"])
+
   elif evt["type"] == "EX_DECRYPT_FILE":
-    expected = evt.get("expected", None)
-    decrypt.decrypt_file(evt["path"], expected)
+    message = evt["message"]
+    credentials = evt["credentials"]
+    decrypt.decrypt_file(message, credentials["keyId"], credentials["secret"])
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -48,11 +56,19 @@ if __name__ == "__main__":
   }
 
   evt_read_bucket = {
-    "type": "EX_READ_BUCKET"
+    "type": "EX_READ_BUCKET",
+    "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    }
   }
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
+      "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    },
     "data": {
       "hello": "world",
       "from": "cage"
@@ -62,6 +78,10 @@ if __name__ == "__main__":
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
     "download": True,
+    "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    },
     "data": {
       "hello": "world",
       "signed": "data"
@@ -70,10 +90,13 @@ if __name__ == "__main__":
 
   evt_decrypt_file = {
     "type": "EX_DECRYPT_FILE",
-    "path": os.path.join(config.DATA_FOLDER, "message"),
-    "expected": {
-      "super": "secret",
-      "json": "file"
+    "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    },
+    "message": {
+      "passphrase": os.environ["PASSPHRASE"],
+      "content": os.environ["CONTENT"] 
     }
   }
 

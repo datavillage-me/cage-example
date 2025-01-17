@@ -2,20 +2,13 @@ from datetime import datetime
 from dv_utils import audit_log, LogLevel
 import gcs 
 import config
-import json
+import util
 import os
 
-def __create_tmp_json(data: dict) -> str:
-  tmp_file = os.path.join(config.DATA_FOLDER, 'tmp.json')
-  with open(tmp_file, 'w') as f:
-    f.write(json.dumps(data))
-  
-  return tmp_file
-
-def write_data(data: dict):
+def write_data(data: dict, key_id: str, secret: str):
   data['timestamp'] = datetime.now().isoformat()
-  tmp_file = __create_tmp_json(data)
-  gcs_conn, duckdb_conn = gcs.connect_gcs(config.OUTPUT_CONNECTOR)
+  tmp_file = util.create_tmp_json(data)
+  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
 
   duckdb_conn.sql(f"CREATE TABLE export_data AS SELECT * FROM read_json('{tmp_file}')")
   
@@ -24,10 +17,10 @@ def write_data(data: dict):
   os.remove(tmp_file)
   pass
 
-def write_signed_data(data: dict, should_download: bool):
+def write_signed_data(data: dict, should_download: bool, key_id: str, secret: str):
   data['timestamp'] = datetime.now().isoformat()
-  tmp_file = __create_tmp_json(data)
-  gcs_conn, duckdb_conn = gcs.connect_gcs(config.OUTPUT_CONNECTOR)
+  tmp_file = util.create_tmp_json(data)
+  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
 
   duckdb_conn.sql(f"CREATE TABLE signed_data AS SELECT * FROM read_json('{tmp_file}')")
 
