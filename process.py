@@ -95,8 +95,8 @@ if __name__ == "__main__":
       "secret": os.environ['SECRET']
     },
     "message": {
-      "passphrase": "afV/s1slOknWJp4QssB77UbjFc6IW1W6u4hWZgmK+0oLEACNuU34AooHKVDLUzaYrs/B29v2ENk3nY2LNMBDafiRAANXUBn1wBAwpGS5smACi+WkA6OmthgL5aG0DNgjgh6W/kazamy+dVeDT1rrOgM4uULeHcI50AL2izIX6rQr864a6lwufNikCcnia27dq9JMycA3Os5aEwU5L0psAE256QcJrsF5LLEXEat5jiVahyhE1jPO8mT6G2LxKlqYLlBIsnZSLYuHxBoNAs7XCPWYygwqsszgXwJDOwDOQeZlvbzxjpraTlFnxByYRYFbGIjA46LLxUBcETW5GLSNCw==",
-      "content": "U2FsdGVkX1+uN38XyzMoWlk/6qm1jTM2o/emSbr32kaMTglWKsCRHexYd3VXkYWf8vrrdwAjTJAdceA9PLnByQ=="
+      "passphrase": os.environ["PASSPHRASE"],
+      "content": os.environ["CONTENT"] 
     }
   }
 
