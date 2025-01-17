@@ -30,8 +30,9 @@ def event_processor(evt: dict):
     write_bucket.write_signed_data(evt["data"], should_download, credentials["keyId"], credentials["secret"])
 
   elif evt["type"] == "EX_DECRYPT_FILE":
-    expected = evt.get("expected", None)
-    decrypt.decrypt_file(evt["path"], expected)
+    message = evt["message"]
+    credentials = evt["credentials"]
+    decrypt.decrypt_file(message["passphrase"], message["content"], credentials["keyId"], credentials["secret"])
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -89,15 +90,18 @@ if __name__ == "__main__":
 
   evt_decrypt_file = {
     "type": "EX_DECRYPT_FILE",
-    "path": os.path.join(config.DATA_FOLDER, "message"),
-    "expected": {
-      "super": "secret",
-      "json": "file"
+    "credentials": {
+      "keyId": os.environ['KEY_ID'],
+      "secret": os.environ['SECRET']
+    },
+    "message": {
+      "passphrase": "afV/s1slOknWJp4QssB77UbjFc6IW1W6u4hWZgmK+0oLEACNuU34AooHKVDLUzaYrs/B29v2ENk3nY2LNMBDafiRAANXUBn1wBAwpGS5smACi+WkA6OmthgL5aG0DNgjgh6W/kazamy+dVeDT1rrOgM4uULeHcI50AL2izIX6rQr864a6lwufNikCcnia27dq9JMycA3Os5aEwU5L0psAE256QcJrsF5LLEXEat5jiVahyhE1jPO8mT6G2LxKlqYLlBIsnZSLYuHxBoNAs7XCPWYygwqsszgXwJDOwDOQeZlvbzxjpraTlFnxByYRYFbGIjA46LLxUBcETW5GLSNCw==",
+      "content": "U2FsdGVkX1+uN38XyzMoWlk/6qm1jTM2o/emSbr32kaMTglWKsCRHexYd3VXkYWf8vrrdwAjTJAdceA9PLnByQ=="
     }
   }
 
   # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_bucket)
-  dispatch_event_local(evt_write_bucket)
+  # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  # dispatch_event_local(evt_decrypt_file)
+  dispatch_event_local(evt_decrypt_file)

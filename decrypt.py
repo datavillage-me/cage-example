@@ -1,16 +1,33 @@
 from dv_utils import SecretManager, audit_log, LogLevel
 import json
+import util
+import gcs
+import os
+import io
+import requests
+import config
 
-def decrypt_file(location: str, expected: dict | None):
-  files = {'message': open(location, "rb")}
-  s = SecretManager()
-  resp = s.decrypt(files)
-  audit_log("successfully decrypted file", LogLevel.INFO)
-  resp_obj = json.loads(resp)
-  if expected:
-    equal = json.dumps(resp_obj, sort_keys=True) == json.dumps(expected, sort_keys=True)
-    if equal:
-      audit_log("decrypted file has expected content", LogLevel.INFO)
-    else:
-      audit_log(f"comparison failed:\n  Got: {resp_obj}\n  Expected: {expected}", LogLevel.WARN)
-      audit_log("decrypted file does not have expected content", LogLevel.INFO)
+def decrypt_file(passphrase: str, content: str, key_id: str, secret: str):
+  message = {
+    "passphrase": passphrase,
+    "content": content
+  }
+
+  file_like_obj = io.StringIO(json.dumps(message))
+  files = {'message': file_like_obj}
+
+  resp = requests.post(f"{config.SECRET_MANAGER_URL}/decrypt", files=files)
+  if not resp.ok:
+    audit_log(f"could not decrypt file. Got [{resp.status_code}]: {resp.text}")
+    return
+  
+  resp_obj = resp.json()
+  tmp_file = util.create_tmp_json(resp_obj)
+
+  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
+
+  duckdb_conn.sql(f"CREATE TABLE decrypted_data AS SELECT * FROM read_json('{tmp_file}')")
+
+  gcs_conn.export_duckdb("decrypted_data")
+  audit_log("exported decrypted data to gcs", LogLevel.INFO)
+  os.remove(tmp_file)
