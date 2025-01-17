@@ -7,12 +7,7 @@ import io
 import requests
 import config
 
-def decrypt_file(passphrase: str, content: str, key_id: str, secret: str):
-  message = {
-    "passphrase": passphrase,
-    "content": content
-  }
-
+def decrypt_file(message:dict, key_id: str, secret: str):
   file_like_obj = io.StringIO(json.dumps(message))
   files = {'message': file_like_obj}
 

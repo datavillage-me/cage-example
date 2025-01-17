@@ -32,7 +32,7 @@ def event_processor(evt: dict):
   elif evt["type"] == "EX_DECRYPT_FILE":
     message = evt["message"]
     credentials = evt["credentials"]
-    decrypt.decrypt_file(message["passphrase"], message["content"], credentials["keyId"], credentials["secret"])
+    decrypt.decrypt_file(message, credentials["keyId"], credentials["secret"])
 
   audit_log("done processing event", LogLevel.INFO)
 
