@@ -17,8 +17,8 @@ def event_processor(evt: dict):
     read_space.print_space_info()
 
   elif evt["type"] == "EX_READ_BUCKET":
-    credentials = evt["credentials"]
-    read_bucket.read_file(credentials["keyId"], credentials["secret"])
+    gcs = evt["gcs"]
+    read_bucket.read_file(gcs)
 
   elif evt["type"] == "EX_WRITE_BUCKET":
     credentials = evt["credentials"]
@@ -57,7 +57,8 @@ if __name__ == "__main__":
 
   evt_read_bucket = {
     "type": "EX_READ_BUCKET",
-    "credentials": {
+    "gcs": {
+      "location": "gs://cage_example/netflix_titles.csv",
       "keyId": os.environ['KEY_ID'],
       "secret": os.environ['SECRET']
     }

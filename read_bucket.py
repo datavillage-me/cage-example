@@ -2,9 +2,9 @@ from dv_utils import audit_log, LogLevel
 import gcs
 import time
 
-def read_file(key_id: str, secret: str, retry = True):
+def read_file(conn: dict, retry = True):
   try:
-    gcs_conn, duckdb_conn = gcs.connect_import(key_id, secret)
+    gcs_conn, duckdb_conn = gcs.connect_import(conn)
 
     from_statement = gcs_conn.get_duckdb_source(options="")
 
@@ -15,7 +15,7 @@ def read_file(key_id: str, secret: str, retry = True):
     if retry:
       audit_log("got error while reading file from GCS. retrying...", LogLevel.WARN)
       time.sleep(1)
-      read_file(key_id, secret, False)
+      read_file(conn, False)
     else:
       audit_log(f"could not read file: {e}", LogLevel.ERROR)
       
