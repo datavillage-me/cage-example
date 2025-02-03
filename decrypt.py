@@ -7,7 +7,7 @@ import io
 import requests
 import config
 
-def decrypt_file(message:dict, key_id: str, secret: str):
+def decrypt_file(message:dict, conn: dict):
   file_like_obj = io.StringIO(json.dumps(message))
   files = {'message': file_like_obj}
 
@@ -20,7 +20,7 @@ def decrypt_file(message:dict, key_id: str, secret: str):
   resp_json = {"content": resp_text}
   tmp_file = util.create_tmp_json(resp_json)
 
-  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
+  gcs_conn, duckdb_conn = gcs.connect_export(conn)
 
   duckdb_conn.sql(f"CREATE TABLE decrypted_data AS SELECT * FROM read_json('{tmp_file}')")
 

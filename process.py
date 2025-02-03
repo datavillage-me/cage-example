@@ -21,18 +21,18 @@ def event_processor(evt: dict):
     read_bucket.read_file(gcs)
 
   elif evt["type"] == "EX_WRITE_BUCKET":
-    credentials = evt["credentials"]
-    write_bucket.write_data(evt["data"], credentials["keyId"], credentials["secret"])
+    gcs = evt["gcs"]
+    write_bucket.write_data(evt["data"], gcs)
 
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     should_download = evt.get("download", False)
-    credentials = evt["credentials"]
-    write_bucket.write_signed_data(evt["data"], should_download, credentials["keyId"], credentials["secret"])
+    gcs = evt["gcs"]
+    write_bucket.write_signed_data(evt["data"], should_download, gcs)
 
   elif evt["type"] == "EX_DECRYPT_FILE":
     message = evt["message"]
-    credentials = evt["credentials"]
-    decrypt.decrypt_file(message, credentials["keyId"], credentials["secret"])
+    gcs = evt["gcs"]
+    decrypt.decrypt_file(message, gcs)
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
-      "credentials": {
+    "gcs": {
       "keyId": os.environ['KEY_ID'],
       "secret": os.environ['SECRET']
     },
@@ -79,7 +79,7 @@ if __name__ == "__main__":
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
     "download": True,
-    "credentials": {
+    "gcs": {
       "keyId": os.environ['KEY_ID'],
       "secret": os.environ['SECRET']
     },
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
   evt_decrypt_file = {
     "type": "EX_DECRYPT_FILE",
-    "credentials": {
+    "gcs": {
       "keyId": os.environ['KEY_ID'],
       "secret": os.environ['SECRET']
     },
@@ -102,7 +102,7 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
-  dispatch_event_local(evt_read_bucket)
+  # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  # dispatch_event_local(evt_decrypt_file)
+  dispatch_event_local(evt_decrypt_file)

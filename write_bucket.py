@@ -5,12 +5,12 @@ import config
 import util
 import os
 
-def write_data(data: dict, key_id: str, secret: str):
+def write_data(data: dict, conn: dict):
   data['timestamp'] = datetime.now().isoformat()
   audit_log("creating tmp file")
   tmp_file = util.create_tmp_json(data)
   audit_log("connecting to gcs")
-  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
+  gcs_conn, duckdb_conn = gcs.connect_export(conn)
 
   audit_log("create duckdb table")
   duckdb_conn.sql(f"CREATE TABLE export_data AS SELECT * FROM read_json('{tmp_file}')")
@@ -21,10 +21,10 @@ def write_data(data: dict, key_id: str, secret: str):
   os.remove(tmp_file)
   pass
 
-def write_signed_data(data: dict, should_download: bool, key_id: str, secret: str):
+def write_signed_data(data: dict, should_download: bool, conn: dict):
   data['timestamp'] = datetime.now().isoformat()
   tmp_file = util.create_tmp_json(data)
-  gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
+  gcs_conn, duckdb_conn = gcs.connect_export(conn)
 
   duckdb_conn.sql(f"CREATE TABLE signed_data AS SELECT * FROM read_json('{tmp_file}')")
 
