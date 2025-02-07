@@ -16,8 +16,9 @@ def decrypt_file(message:dict, key_id: str, secret: str):
     audit_log(f"could not decrypt file. Got [{resp.status_code}]: {resp.text}")
     return
   
-  resp_obj = resp.json()
-  tmp_file = util.create_tmp_json(resp_obj)
+  resp_text = resp.text
+  resp_json = {"content": resp_text}
+  tmp_file = util.create_tmp_json(resp_json)
 
   gcs_conn, duckdb_conn = gcs.connect_export(key_id, secret)
 
