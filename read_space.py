@@ -51,4 +51,4 @@ def get_label_safe(provider: dict) -> str:
   if name:
     return name
   
-  return provider.get("clientID", None)
+  return provider.get("clientId", None)
