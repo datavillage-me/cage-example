@@ -1,18 +1,18 @@
 import config
 import requests
-from dv_utils import audit_log, LogLevel
+from dv_utils import log, LogLevel
 
 def print_space_info():
   endpoint = f"{config.CONTROL_PLANE_URL}/collaboration-spaces/{config.DV_CAGE_ID}"
   token = config.DV_TOKEN
   response = requests.get(endpoint, headers={'Authorization': f"Bearer {token}"})
   if not response.ok:
-    audit_log(f"could not get collaboration space. Got [{response.status_code}]: {response.text}", LogLevel.ERROR)
+    log(f"could not get collaboration space. Got [{response.status_code}]: {response.text}", LogLevel.ERROR)
     return
   
   space = response.json()
   desc = make_description(space)
-  audit_log(desc, LogLevel.INFO)
+  log(desc, LogLevel.INFO)
   pass
 
 def make_description(space: dict) -> str:
