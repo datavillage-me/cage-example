@@ -26,10 +26,14 @@ def write_data(data: dict, location: str = None, secret_manager_key: str = None)
   os.remove(tmp_file)
   pass
 
-def write_signed_data(data: dict, should_download: bool, conn: dict):
+def write_signed_data(data: dict, location: str = None, secret_manager_key: str = None):
   data['timestamp'] = datetime.now().isoformat()
   tmp_file = util.create_tmp_json(data)
-  gcs_conn, duckdb_conn = gcs.connect_export(conn)
+
+  loc = location if location and len(location) else config.GCS_DEFAULT_WRITE
+  ext = "{model}.json"
+  s_key = secret_manager_key if secret_manager_key and len(secret_manager_key) else config.SECRET_MANAGER_KEY
+  gcs_conn, duckdb_conn = gcs.connect(f"{loc}/{ext}", s_key)
 
   duckdb_conn.sql(f"CREATE TABLE signed_data AS SELECT * FROM read_json('{tmp_file}')")
 
@@ -37,10 +41,3 @@ def write_signed_data(data: dict, should_download: bool, conn: dict):
   audit_log("exported signed data", LogLevel.INFO)
 
   os.remove(tmp_file)
-
-  if should_download:
-    audit_log("downloading signed data", LogLevel.INFO)
-    output_path = os.path.join(config.DATA_FOLDER, "signed_data.json")
-    query = f"COPY signed_json_signed_data TO '{output_path}'"
-    duckdb_conn.sql(query)
-    audit_log("downloaded signed data")

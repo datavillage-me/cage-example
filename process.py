@@ -27,9 +27,10 @@ def event_processor(evt: dict):
     write_bucket.write_data(evt["data"], location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
-    should_download = evt.get("download", False)
-    gcs = evt["gcs"]
-    write_bucket.write_signed_data(evt["data"], should_download, gcs)
+    data = evt['data']
+    location = evt.get("location", None)
+    secret_manager_key = evt.get("secret_manager_key", None)
+    write_bucket.write_signed_data(data, location, secret_manager_key)
 
   elif evt["type"] == "EX_DECRYPT_FILE":
     message = evt["message"]
@@ -94,7 +95,7 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
-  dispatch_event_local(evt_read_bucket)
+  # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
-  # dispatch_event_local(evt_write_bucket_signed)
+  dispatch_event_local(evt_write_bucket_signed)
   # dispatch_event_local(evt_decrypt_file)
