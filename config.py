@@ -10,6 +10,7 @@ DV_CAGE_ID = os.environ['DV_CAGE_ID']
 
 SECRET_MANAGER_KEY = "configuration_example_gcs"
 SECRET_MANAGER_URL = os.environ['SECRET_MANAGER_URL']
+DV_TOKEN = os.environ["DV_TOKEN"]
 
 GCS_DEFAULT_READ = "gs://cage_example/netflix_titles.csv"
 GCS_DEFAULT_WRITE = "gs://cage_example"
