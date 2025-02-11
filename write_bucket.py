@@ -5,12 +5,17 @@ import config
 import util
 import os
 
-def write_data(data: dict, conn: dict):
+def write_data(data: dict, location: str = None, secret_manager_key: str = None):
   data['timestamp'] = datetime.now().isoformat()
   audit_log("creating tmp file")
   tmp_file = util.create_tmp_json(data)
   audit_log("connecting to gcs")
-  gcs_conn, duckdb_conn = gcs.connect_export(conn)
+
+  loc = location if location and len(location) else config.GCS_DEFAULT_WRITE
+  ext = "{model}.json"
+  s_key = secret_manager_key if secret_manager_key and len(secret_manager_key) else config.SECRET_MANAGER_KEY
+
+  gcs_conn, duckdb_conn = gcs.connect(f"{loc}/{ext}", s_key)
 
   audit_log("create duckdb table")
   duckdb_conn.sql(f"CREATE TABLE export_data AS SELECT * FROM read_json('{tmp_file}')")

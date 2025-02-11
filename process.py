@@ -22,8 +22,9 @@ def event_processor(evt: dict):
     read_bucket.read_file(location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET":
-    gcs = evt["gcs"]
-    write_bucket.write_data(evt["data"], gcs)
+    location = evt.get("location", None)
+    secret_manager_key = evt.get("secret_manager_key", None)
+    write_bucket.write_data(evt["data"], location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     should_download = evt.get("download", False)
@@ -64,10 +65,8 @@ if __name__ == "__main__":
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
-    "gcs": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    },
+    "location": "gs://cage_example",
+    "secret_manager_key": "configuration_example_gcs",
     "data": {
       "hello": "world",
       "from": "cage"
@@ -76,11 +75,8 @@ if __name__ == "__main__":
 
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
-    "download": True,
-    "gcs": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    },
+    "location": "gs://cage_example",
+    "secret_manager_key": "configuration_example_gcs",
     "data": {
       "hello": "world",
       "signed": "data"
@@ -89,10 +85,8 @@ if __name__ == "__main__":
 
   evt_decrypt_file = {
     "type": "EX_DECRYPT_FILE",
-    "gcs": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    },
+    "location": "gs://cage_example",
+    "secret_manager_key": "configuration_example_gcs",
     "message": {
       "passphrase": os.environ["PASSPHRASE"],
       "content": os.environ["CONTENT"] 

@@ -1,10 +1,13 @@
 from dv_utils import audit_log, LogLevel
 import gcs
 import time
+import config
 
 def read_file(location: str = None, secret_manager_key: str = None, retry = True):
   try:
-    gcs_conn, duckdb_conn = gcs.connect_import(location, secret_manager_key)
+    loc = location if location and len(location) else config.GCS_DEFAULT_READ
+    s_key = secret_manager_key if secret_manager_key and len(secret_manager_key) else config.SECRET_MANAGER_KEY
+    gcs_conn, duckdb_conn = gcs.connect(loc, s_key)
 
     from_statement = gcs_conn.get_duckdb_source(options="")
 
