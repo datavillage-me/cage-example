@@ -34,8 +34,9 @@ def event_processor(evt: dict):
 
   elif evt["type"] == "EX_DECRYPT_FILE":
     message = evt["message"]
-    gcs = evt["gcs"]
-    decrypt.decrypt_file(message, gcs)
+    location = evt.get("location", None)
+    secret_manager_key = evt.get("secret_manager_key", None)
+    decrypt.decrypt_file(message, location, secret_manager_key)
 
   audit_log("done processing event", LogLevel.INFO)
 
@@ -97,5 +98,5 @@ if __name__ == "__main__":
   # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
-  dispatch_event_local(evt_write_bucket_signed)
-  # dispatch_event_local(evt_decrypt_file)
+  # dispatch_event_local(evt_write_bucket_signed)
+  dispatch_event_local(evt_decrypt_file)

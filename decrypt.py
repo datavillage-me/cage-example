@@ -3,21 +3,12 @@ import json
 import util
 import gcs
 import os
-import io
-import requests
 import config
+import dv_secret_manager
 
-def decrypt_file(message:dict, location: str = None, secret_manager_key: str = None):
-  file_like_obj = io.StringIO(json.dumps(message))
-  files = {'message': file_like_obj}
-
-  resp = requests.post(f"{config.SECRET_MANAGER_URL}/decrypt", files=files)
-  if not resp.ok:
-    audit_log(f"could not decrypt file. Got [{resp.status_code}]: {resp.text}")
-    return
-  
-  resp_text = resp.text
-  resp_json = {"content": resp_text}
+def decrypt_file(message:dict, location: str = None, secret_manager_key: str = None):  
+  decrypted = __decrypt(message)
+  resp_json = {"content": decrypted}
   tmp_file = util.create_tmp_json(resp_json)
 
   loc = location if location and len(location) else config.GCS_DEFAULT_WRITE
@@ -31,3 +22,15 @@ def decrypt_file(message:dict, location: str = None, secret_manager_key: str = N
   gcs_conn.export_duckdb("decrypted_data")
   audit_log("exported decrypted data to gcs", LogLevel.INFO)
   os.remove(tmp_file)
+
+def __decrypt(message: dict) -> str:
+  data_bytes = json.dumps(message).encode("utf-8")
+  configuration = dv_secret_manager.Configuration(host = config.SECRET_MANAGER_URL)
+  with dv_secret_manager.ApiClient(configuration) as c:
+    inst = dv_secret_manager.DefaultApi(c)
+    try:
+      resp = inst.decrypt_post(data_bytes)
+      audit_log("decrypted data", LogLevel.INFO)
+      return resp
+    except Exception as e:
+      audit_log(f"something went wrong when decrypting data: {e}")
