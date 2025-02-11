@@ -1,15 +1,35 @@
 from dv_utils.connectors.gcs import GCSConfiguration, GCSConnector
+import dv_secret_manager
+import json
+from dv_utils import audit_log, LogLevel
 import duckdb
 import config
 
-def connect_import(conn: dict) -> tuple[GCSConnector, duckdb.duckdb.DuckDBPyConnection]:
+def __get_conn_secrets(secret_manager_key: str = None) -> dict:
+  conf = dv_secret_manager.Configuration(host = "http://localhost:8081")
+  key = secret_manager_key if secret_manager_key and len(secret_manager_key) else config.SECRET_MANAGER_SECRET
+
+  with dv_secret_manager.ApiClient(conf) as c:
+    instance = dv_secret_manager.DefaultApi(c)
+    try:
+      resp = instance.secrets_secret_get(key, plaintext=True)
+      return json.loads(resp)
+    except Exception as e:
+      audit_log(f"could not get secrets: {e}", LogLevel.ERROR)
+      return dict()
+   
+
+def connect_import(location: str = None, secret_manager_key: str = None) -> tuple[GCSConnector, duckdb.duckdb.DuckDBPyConnection]:
+  secrets = __get_conn_secrets(secret_manager_key)
+
   gcs_config = GCSConfiguration()
-  loc = conn.get('location', config.GCS_DEFAULT_READ)
+
+  loc = location if location and len(location) else config.GCS_DEFAULT_READ
   gcs_config.location = loc
   gcs_config.file_format = loc.split('.')[-1]
-  gcs_config.key_id = conn['keyId']
-  gcs_config.secret = conn['secret']
-  gcs_config.connector_id = "gcs_netflix"
+  gcs_config.key_id = secrets["key_id"]
+  gcs_config.secret = secrets['secret']
+  gcs_config.connector_id = "example_input"
   gcs_conn = GCSConnector(gcs_config)
 
 
