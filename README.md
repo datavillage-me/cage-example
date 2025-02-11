@@ -30,24 +30,18 @@ Reads the details of the space the cage it is deployed for, and prints a summary
 ```json
 {
   "type": "EX_READ_BUCKET",
-  "gcs": {
-    "location": "gs://cage_example/netflix_titles.csv", // optional
-    "keyId": "GCS_KEY_ID",
-    "secret": "GCS_SECRET"
-  }
+  "location": "gs://cage_example/netflix_titles.csv", // optional
+  "secret_manager_key": "configuration_example_gcs" // optional
 }
 ```
 
-Reads a file from GCS bucket. If `location` is not specified, it will read the default specified in `config.GCS_DEFAULT_READ`.
+Reads a file from GCS bucket.
 
 ```json
 {
   "type": "EX_WRITE_BUCKET",
-  "gcs": {
-    "location": "gs://cage_example", // optional
-    "keyId": "GCS_KEY_ID",
-    "secret": "GCS_SECRET"
-  },
+  "location": "gs://cage_example", // optional
+  "secret_manager_key": "configuration_example_gcs", // optional
   "data": {
     "hello": "world",
     "from": "cage"
@@ -55,17 +49,13 @@ Reads a file from GCS bucket. If `location` is not specified, it will read the d
 }
 ```
 
-Writes the `data` dict as a json file to GCS bucket. If `location` is not specified, it will write by default to `config.GCS_DEFAULT_WRITE`.
+Writes the `data` dict as a json file to GCS bucket.
 
 ```json
 {
   "type": "EX_WRITE_BUCKET_SIGNED",
-  "download": true, // optional. Default `false`
-  "gcs": {
-    "location": "gs://cage_example", // optional
-    "keyId": "GCS_KEY_ID",
-    "secret": "GCS_SECRET"
-  },
+  "location": "gs://cage_example", // optional
+  "secret_manager_key": "configuration_example_gcs", // optional
   "data": {
     "hello": "world",
     "signed": "data"
@@ -74,17 +64,12 @@ Writes the `data` dict as a json file to GCS bucket. If `location` is not specif
 ```
 
 Creates a json from the dict under `data` and signs it at the secret manager. The result is written to a GCS bucket.
-If `location` is not specified, it will write by default to `config.GCS_DEFAULT_WRITE`.
-If `download` is true, it will download the signed file to `config.DATA_FOLDER`.
 
 ```json
 {
   "type": "EX_DECRYPT_FILE",
-  "gcs": {
-    "location": "gs://cage_example", // optional
-    "keyId": "GCS_KEY_ID",
-    "secret": "GCS_SECRET"
-  },
+  "location": "gs://cage_example", // optional
+  "secret_manager_key": "configuration_example_gcs", // optional
   "message": {
     "passphrase": "PASSPHRASE",
     "content": "CONTENT"
@@ -93,7 +78,19 @@ If `download` is true, it will download the signed file to `config.DATA_FOLDER`.
 ```
 
 Decrypts the encrypted content under `message` at the secret manager and writes the result to a GCS bucket.
-If `location` is not specified, it will write by default to `config.GCS_DEFAULT_WRITE`.
+
+## Secrets
+
+The secrets to access the bucket should be stored in a secret manager as a json in following format
+
+```json
+{
+  "key_id": "KEY_ID",
+  "secret": "SECRET"
+}
+```
+
+The key used to store it in the secret manager, can be passed with the `secret_manager_key` field in the events. If not passed, the default value in `config.SECRET_MANAGER_KEY` will be used.
 
 ## Run in cage
 
