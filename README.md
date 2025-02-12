@@ -65,20 +65,6 @@ Writes the `data` dict as a json file to GCS bucket.
 
 Creates a json from the dict under `data` and signs it at the secret manager. The result is written to a GCS bucket.
 
-```json
-{
-  "type": "EX_DECRYPT_FILE",
-  "location": "gs://cage_example", // optional
-  "secret_manager_key": "configuration_example_gcs", // optional
-  "message": {
-    "passphrase": "PASSPHRASE",
-    "content": "CONTENT"
-  }
-}
-```
-
-Decrypts the encrypted content under `message` at the secret manager and writes the result to a GCS bucket.
-
 ## Secrets
 
 The secrets to access the bucket should be stored in a secret manager as a json in following format

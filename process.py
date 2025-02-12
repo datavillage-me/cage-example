@@ -3,9 +3,7 @@ from dv_utils import log, LogLevel, set_event
 import read_space
 import read_bucket
 import write_bucket
-import decrypt
-import os
-import config
+
 
 def event_processor(evt: dict):
   """
@@ -31,12 +29,6 @@ def event_processor(evt: dict):
     location = evt.get("location", None)
     secret_manager_key = evt.get("secret_manager_key", None)
     write_bucket.write_signed_data(data, location, secret_manager_key)
-
-  elif evt["type"] == "EX_DECRYPT_FILE":
-    message = evt["message"]
-    location = evt.get("location", None)
-    secret_manager_key = evt.get("secret_manager_key", None)
-    decrypt.decrypt_file(message, location, secret_manager_key)
 
   log("done processing event", LogLevel.INFO)
 
@@ -85,18 +77,7 @@ if __name__ == "__main__":
     }
   }
 
-  evt_decrypt_file = {
-    "type": "EX_DECRYPT_FILE",
-    "location": "gs://cage_example",
-    "secret_manager_key": "configuration_example_gcs",
-    "message": {
-      "passphrase": os.environ["PASSPHRASE"],
-      "content": os.environ["CONTENT"] 
-    }
-  }
-
-  dispatch_event_local(evt_read_space)
-  # dispatch_event_local(evt_read_bucket)
+  # dispatch_event_local(evt_read_space)
+  dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  dispatch_event_local(evt_decrypt_file)
