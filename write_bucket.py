@@ -1,5 +1,5 @@
 from datetime import datetime
-from dv_utils import audit_log, LogLevel
+from dv_utils import log, LogLevel
 import gcs 
 import config
 import util
@@ -8,9 +8,9 @@ import json
 import dv_secret_manager
 
 def write_data(data: dict, location: str = None, secret_manager_key: str = None, file_name: str = "export_data"):
-  audit_log("creating tmp file")
+  log("creating tmp file")
   tmp_file = util.create_tmp_json(data)
-  audit_log("connecting to gcs")
+  log("connecting to gcs")
 
   loc = location if location and len(location) else config.GCS_DEFAULT_WRITE
   ext = "{model}.json"
@@ -18,12 +18,12 @@ def write_data(data: dict, location: str = None, secret_manager_key: str = None,
 
   gcs_conn, duckdb_conn = gcs.connect(f"{loc}/{ext}", s_key)
 
-  audit_log("create duckdb table")
+  log("create duckdb table")
   duckdb_conn.sql(f"CREATE TABLE {file_name} AS SELECT * FROM read_json('{tmp_file}')")
   
-  audit_log("export data to gcs", LogLevel.INFO)
+  log("export data to gcs", LogLevel.INFO)
   gcs_conn.export_duckdb(file_name)
-  audit_log("exported data", LogLevel.INFO)
+  log("exported data", LogLevel.INFO)
   os.remove(tmp_file)
   pass
 
@@ -43,8 +43,8 @@ def __sign_data(data: dict) -> dict:
     inst = dv_secret_manager.DefaultApi(c)
     try:
       resp = inst.sign_post(data_bytes)
-      audit_log("signed data at secret manager")
+      log("signed data at secret manager")
       return resp
     except Exception as e:
-      audit_log(f"could not sign data: {e}", LogLevel.ERROR)
+      log(f"could not sign data: {e}", LogLevel.ERROR)
       return None

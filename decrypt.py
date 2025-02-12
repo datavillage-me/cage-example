@@ -1,4 +1,4 @@
-from dv_utils import audit_log, LogLevel
+from dv_utils import SecretManager, log, LogLevel
 import json
 import util
 import gcs
@@ -6,9 +6,17 @@ import os
 import config
 import dv_secret_manager
 
-def decrypt_file(message:dict, location: str = None, secret_manager_key: str = None):  
-  decrypted = __decrypt(message)
-  resp_json = {"content": decrypted}
+def decrypt_file(message:dict, key_id: str, secret: str):
+  file_like_obj = io.StringIO(json.dumps(message))
+  files = {'message': file_like_obj}
+
+  resp = requests.post(f"{config.SECRET_MANAGER_URL}/decrypt", files=files)
+  if not resp.ok:
+    log(f"could not decrypt file. Got [{resp.status_code}]: {resp.text}")
+    return
+  
+  resp_text = resp.text
+  resp_json = {"content": resp_text}
   tmp_file = util.create_tmp_json(resp_json)
 
   loc = location if location and len(location) else config.GCS_DEFAULT_WRITE
@@ -20,7 +28,7 @@ def decrypt_file(message:dict, location: str = None, secret_manager_key: str = N
   duckdb_conn.sql(f"CREATE TABLE decrypted_data AS SELECT * FROM read_json('{tmp_file}')")
 
   gcs_conn.export_duckdb("decrypted_data")
-  audit_log("exported decrypted data to gcs", LogLevel.INFO)
+  log("exported decrypted data to gcs", LogLevel.INFO)
   os.remove(tmp_file)
 
 def __decrypt(message: dict) -> str:

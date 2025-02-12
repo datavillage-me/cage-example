@@ -1,17 +1,18 @@
 import config
 import requests
-from dv_utils import audit_log, LogLevel
+from dv_utils import log, LogLevel
 
 def print_space_info():
   endpoint = f"{config.CONTROL_PLANE_URL}/collaboration-spaces/{config.DV_CAGE_ID}"
-  response = requests.get(endpoint, headers={'Authorization': f"Bearer {config.DV_TOKEN}"})
+  token = config.DV_TOKEN
+  response = requests.get(endpoint, headers={'Authorization': f"Bearer {token}"})
   if not response.ok:
-    audit_log(f"could not get collaboration space. Got [{response.status_code}]: {response.text}", LogLevel.ERROR)
+    log(f"could not get collaboration space. Got [{response.status_code}]: {response.text}", LogLevel.ERROR)
     return
   
   space = response.json()
   desc = make_description(space)
-  audit_log(desc, LogLevel.INFO)
+  log(desc, LogLevel.INFO)
   pass
 
 def make_description(space: dict) -> str:
@@ -37,10 +38,17 @@ def categorize_collaborators(space: dict) -> tuple[list[str], str, list[str]]:
 
   for c in space['collaborators']:
     if c['role'] == 'DataProvider':
-      providers.append(c.get('name', c['clientId']))
+      providers.append(get_label_safe(c))
     elif c['role'] == 'CodeProvider':
-      code = c.get('name', c['clientId'])
+      code = get_label_safe(c)
     elif c['role'] == 'DataConsumer':
-      consumers.append(c.get('name', c['clientId']))
+      consumers.append(get_label_safe(c))
 
   return (providers, code, consumers)
+
+def get_label_safe(provider: dict) -> str:
+  name = provider.get("name", None)
+  if name:
+    return name
+  
+  return provider.get("clientId", None)
