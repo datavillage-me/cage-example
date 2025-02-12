@@ -1,4 +1,4 @@
-from dv_utils import audit_log, LogLevel
+from dv_utils import log, LogLevel
 import gcs
 import time
 
@@ -10,12 +10,12 @@ def read_file(key_id: str, secret: str, retry = True):
 
     result = duckdb_conn.sql(f"SELECT COUNT(*) as count FROM {from_statement}").df()
     count = result['count'][0]
-    audit_log(f"found {count} rows", LogLevel.INFO)
+    log(f"found {count} rows", LogLevel.INFO)
   except Exception as e:
     if retry:
-      audit_log("got error while reading file from GCS. retrying...", LogLevel.WARN)
+      log("got error while reading file from GCS. retrying...", LogLevel.WARN)
       time.sleep(1)
       read_file(key_id, secret, False)
     else:
-      audit_log(f"could not read file: {e}", LogLevel.ERROR)
+      log(f"could not read file: {e}", LogLevel.ERROR)
       

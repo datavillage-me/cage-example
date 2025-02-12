@@ -1,4 +1,4 @@
-from dv_utils import audit_log, LogLevel, set_event
+from dv_utils import log, LogLevel, set_event
 
 import read_space
 import read_bucket
@@ -12,7 +12,7 @@ def event_processor(evt: dict):
   Process an incoming event. The `evt` dict has at least the field `type`
   Exception raised by this function are handled by the default event listener and reported in the logs.
   """
-  audit_log("event_processor started", LogLevel.INFO)
+  log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
 
@@ -34,7 +34,7 @@ def event_processor(evt: dict):
     credentials = evt["credentials"]
     decrypt.decrypt_file(message, credentials["keyId"], credentials["secret"])
 
-  audit_log("done processing event", LogLevel.INFO)
+  log("done processing event", LogLevel.INFO)
 
 
 
@@ -100,8 +100,8 @@ if __name__ == "__main__":
     }
   }
 
-  # dispatch_event_local(evt_read_space)
-  dispatch_event_local(evt_read_bucket)
+  dispatch_event_local(evt_read_space)
+  # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
   # dispatch_event_local(evt_decrypt_file)
