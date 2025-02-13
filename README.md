@@ -1,7 +1,7 @@
 # Cage Algorithm Template
 
 This repository is a template from which one can start to develop an algorithm to be run in a cage in the Datavillage DCP.
-To implement your own algorithm, clone this repo and edit `process.py`. To test, run `python process.py` from the root folder.
+To implement your own algorithm, clone this repo and edit `process.py`. To test, run `python process.py` from the root folder with the correct environment variables set (cfr `.env.example`).
 
 ## Content
 
@@ -14,6 +14,69 @@ Here is a list of the files in this repo and what their use is
 | index.py                            | Entry point of the code when it's ran in a cage. It starts an event listener that registers the incoming events and passes them to the `event_processor` method |
 | Dockerfile                          | Bundles the project in a self contained Docker image                                                                                                            |
 | .github/workflows/release-image.yml | Builds and pushes the image using github actions                                                                                                                |
+
+## Events
+
+Following events are supported
+
+```json
+{
+  "type": "EX_READ_SPACE"
+}
+```
+
+Reads the details of the space the cage it is deployed for, and prints a summary.
+
+```json
+{
+  "type": "EX_READ_BUCKET",
+  "location": "gs://cage_example/netflix_titles.csv", // optional
+  "secret_manager_key": "configuration_example_gcs" // optional
+}
+```
+
+Reads a file from GCS bucket.
+
+```json
+{
+  "type": "EX_WRITE_BUCKET",
+  "location": "gs://cage_example", // optional
+  "secret_manager_key": "configuration_example_gcs", // optional
+  "data": {
+    "hello": "world",
+    "from": "cage"
+  }
+}
+```
+
+Writes the `data` dict as a json file to GCS bucket.
+
+```json
+{
+  "type": "EX_WRITE_BUCKET_SIGNED",
+  "location": "gs://cage_example", // optional
+  "secret_manager_key": "configuration_example_gcs", // optional
+  "data": {
+    "hello": "world",
+    "signed": "data"
+  }
+}
+```
+
+Creates a json from the dict under `data` and signs it at the secret manager. The result is written to a GCS bucket.
+
+## Secrets
+
+The secrets to access the bucket should be stored in a secret manager as a json in following format
+
+```json
+{
+  "key_id": "KEY_ID",
+  "secret": "SECRET"
+}
+```
+
+The key used to store it in the secret manager, can be passed with the `secret_manager_key` field in the events. If not passed, the default value in `config.SECRET_MANAGER_KEY` will be used.
 
 ## Run in cage
 

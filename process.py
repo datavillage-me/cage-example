@@ -3,9 +3,7 @@ from dv_utils import log, LogLevel, set_event
 import read_space
 import read_bucket
 import write_bucket
-import decrypt
-import os
-import config
+
 
 def event_processor(evt: dict):
   """
@@ -17,22 +15,20 @@ def event_processor(evt: dict):
     read_space.print_space_info()
 
   elif evt["type"] == "EX_READ_BUCKET":
-    credentials = evt["credentials"]
-    read_bucket.read_file(credentials["keyId"], credentials["secret"])
+    location = evt.get("location", None)
+    secret_manager_key = evt.get("secret_manager_key", None)
+    read_bucket.read_file(location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET":
-    credentials = evt["credentials"]
-    write_bucket.write_data(evt["data"], credentials["keyId"], credentials["secret"])
+    location = evt.get("location", None)
+    secret_manager_key = evt.get("secret_manager_key", None)
+    write_bucket.write_data(evt["data"], location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
-    should_download = evt.get("download", False)
-    credentials = evt["credentials"]
-    write_bucket.write_signed_data(evt["data"], should_download, credentials["keyId"], credentials["secret"])
-
-  elif evt["type"] == "EX_DECRYPT_FILE":
-    message = evt["message"]
-    credentials = evt["credentials"]
-    decrypt.decrypt_file(message, credentials["keyId"], credentials["secret"])
+    data = evt['data']
+    location = evt.get("location", None)
+    secret_manager_key = evt.get("secret_manager_key", None)
+    write_bucket.write_signed_data(data, location, secret_manager_key)
 
   log("done processing event", LogLevel.INFO)
 
@@ -57,18 +53,14 @@ if __name__ == "__main__":
 
   evt_read_bucket = {
     "type": "EX_READ_BUCKET",
-    "credentials": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    }
+    "location": "gs://cage_example/netflix_titles.csv", # optional
+    "secret_manager_key": "configuration_example_gcs" # optional
   }
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
-      "credentials": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    },
+    "location": "gs://cage_example", # optional
+    "secret_manager_key": "configuration_example_gcs", # optional
     "data": {
       "hello": "world",
       "from": "cage"
@@ -77,31 +69,15 @@ if __name__ == "__main__":
 
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
-    "download": True,
-    "credentials": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    },
+    "location": "gs://cage_example", # optional
+    "secret_manager_key": "configuration_example_gcs", # optional
     "data": {
       "hello": "world",
       "signed": "data"
     }
   }
 
-  evt_decrypt_file = {
-    "type": "EX_DECRYPT_FILE",
-    "credentials": {
-      "keyId": os.environ['KEY_ID'],
-      "secret": os.environ['SECRET']
-    },
-    "message": {
-      "passphrase": os.environ["PASSPHRASE"],
-      "content": os.environ["CONTENT"] 
-    }
-  }
-
-  dispatch_event_local(evt_read_space)
-  # dispatch_event_local(evt_read_bucket)
+  # dispatch_event_local(evt_read_space)
+  dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  # dispatch_event_local(evt_decrypt_file)
