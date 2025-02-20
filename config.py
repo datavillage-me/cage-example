@@ -1,7 +1,7 @@
 import os
 
-# DATA_FOLDER="data/input"
-DATA_FOLDER="/resources/data"
+DATA_FOLDER="data/input"
+# DATA_FOLDER="/resources/data"
 os.makedirs(DATA_FOLDER, exist_ok=True)
 
 ALGO_VERSION = '0.5.0'
