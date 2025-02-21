@@ -30,6 +30,9 @@ def event_processor(evt: dict):
     secret_manager_key = evt.get("secret_manager_key", None)
     write_bucket.write_signed_data(data, location, secret_manager_key)
 
+  elif evt["type"] == "EX_HYDRATE_CONTRACTS":
+    read_bucket.hydrate_contracts()
+
   log("done processing event", LogLevel.INFO)
 
 
@@ -75,6 +78,10 @@ if __name__ == "__main__":
       "hello": "world",
       "signed": "data"
     }
+  }
+
+  evt_hydrate_contract = {
+    "type": "EX_HYDRATE_CONTRACTS"
   }
 
   dispatch_event_local(evt_read_space)

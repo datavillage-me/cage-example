@@ -22,4 +22,6 @@ def read_file(location: str = None, secret_manager_key: str = None, retry = True
       return read_file(location, secret_manager_key, False)
     else:
       log(f"could not read file: {e}", LogLevel.ERROR)
-      
+
+def hydrate_contracts():
+  pass 
