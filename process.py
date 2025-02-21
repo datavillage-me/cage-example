@@ -84,7 +84,8 @@ if __name__ == "__main__":
     "type": "EX_HYDRATE_CONTRACTS"
   }
 
-  dispatch_event_local(evt_read_space)
+  # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
+  dispatch_event_local(evt_hydrate_contract)
