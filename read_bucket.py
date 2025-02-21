@@ -1,9 +1,10 @@
 from dv_utils import log, LogLevel
+from dv_utils.connectors.gcs import GCSConnector
 import gcs
 import time
 import config
 import read_space
-import secret_manager
+import duckdb
 
 def read_file(location: str = None, secret_manager_key: str = None, retry = True):
   try:
@@ -25,6 +26,17 @@ def read_file(location: str = None, secret_manager_key: str = None, retry = True
     else:
       log(f"could not read file: {e}", LogLevel.ERROR)
 
+def print_file(connector: GCSConnector, duckdb_conn: duckdb.duckdb.DuckDBPyConnection):
+  try:
+    from_statement = connector.get_duckdb_source(options="")
+
+    result = duckdb_conn.sql(f"SELECT COUNT(*) as count FROM {from_statement}").df()
+
+    count = result['count'][0]
+    log(f"found {count} rows", LogLevel.INFO)
+  except Exception as e:
+    log(f"could not read file: {e}", LogLevel.ERROR)
+
 def hydrate_contracts():
   collabs = read_space.read_collaborators()
 
@@ -36,11 +48,6 @@ def hydrate_contracts():
 
 
 def __hydrate_contract(c_dict: dict) -> dict:
-  config = __download_configuration(c_dict)
-  print(config)
-
-def __download_configuration(c_dict: dict) -> dict:
-  key = c_dict.get("label", c_dict.get("id", None))
-  secret = secret_manager.get_conn_secrets(f"configuration_{key}")
-  return secret
+  connector, duckdb_conn = gcs.connect_collorator(c_dict)
+  print_file(connector, duckdb_conn)
       
