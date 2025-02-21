@@ -1,26 +1,11 @@
 from dv_utils.connectors.gcs import GCSConfiguration, GCSConnector
-import json
 from dv_utils import log, LogLevel
 import duckdb
-import config
-import requests
-
-def __get_conn_secrets(secret_manager_key: str = None) -> dict:
-  key = secret_manager_key if secret_manager_key and len(secret_manager_key) else config.SECRET_MANAGER_KEY
-  resp = requests.get(f"{config.SECRET_MANAGER_URL}/secrets/{key}?plaintext=true")
-  if resp.status_code != 200:
-    log(f"unexpected status code returned by secret manager: [{resp.status_code}]: {resp.text}", LogLevel.ERROR)
-    return {}
-  
-  try:
-    return json.loads(resp.text)
-  except Exception as e:
-    log(f"could not parse secret manager response to json: {str(e)}", LogLevel.ERROR)
-    return {}
+import secret_manager
    
 
 def connect(location: str, secret_manager_key: str) -> tuple[GCSConnector, duckdb.duckdb.DuckDBPyConnection]:
-  creds = __get_conn_secrets(secret_manager_key)
+  creds = secret_manager.get_conn_secrets(secret_manager_key)
 
   gcs_config = GCSConfiguration()
   gcs_config.location = location
@@ -31,5 +16,6 @@ def connect(location: str, secret_manager_key: str) -> tuple[GCSConnector, duckd
 
   duckdb_conn = duckdb.connect()
   duckdb_conn = gcs_conn.add_duck_db_connection(duckdb_conn)
+  log("connected to duckdb", LogLevel.INFO)
 
   return (gcs_conn, duckdb_conn) 

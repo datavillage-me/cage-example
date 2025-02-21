@@ -3,6 +3,7 @@ import gcs
 import time
 import config
 import read_space
+import secret_manager
 
 def read_file(location: str = None, secret_manager_key: str = None, retry = True):
   try:
@@ -26,10 +27,20 @@ def read_file(location: str = None, secret_manager_key: str = None, retry = True
 
 def hydrate_contracts():
   collabs = read_space.read_collaborators()
-  data_providers = []
+
   for c in collabs:
     c_dict = c.to_dict()
     if c_dict["role"] == "DataProvider" and "dataContract" in c_dict:
-      data_providers.append(c_dict)
-  print(f"got data providers {data_providers}")
+      __hydrate_contract(c_dict)
+
+
+
+def __hydrate_contract(c_dict: dict) -> dict:
+  config = __download_configuration(c_dict)
+  print(config)
+
+def __download_configuration(c_dict: dict) -> dict:
+  key = c_dict.get("label", c_dict.get("id", None))
+  secret = secret_manager.get_conn_secrets(f"configuration_{key}")
+  return secret
       
