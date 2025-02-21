@@ -1,23 +1,20 @@
-import config
-import requests
 from dv_utils import log, LogLevel
+from dv_utils.client import create_client
+from control_plane_cage_client.api.collaboration_spaces import get_collaborators
+from control_plane_cage_client.models.collaborator import Collaborator
+import config
 
 def print_space_info():
-  endpoint = f"{config.CONTROL_PLANE_URL}/collaboration-spaces/{config.DV_CAGE_ID}"
-  token = config.DV_TOKEN
-  response = requests.get(endpoint, headers={'Authorization': f"Bearer {token}"})
-  if not response.ok:
-    log(f"could not get collaboration space. Got [{response.status_code}]: {response.text}", LogLevel.ERROR)
-    return
-  
-  space = response.json()
-  desc = make_description(space)
+  collabs = None
+  with create_client() as c:
+    collabs = get_collaborators.sync(client=c)
+  desc = make_description(collabs)
   log(desc, LogLevel.INFO)
   pass
 
-def make_description(space: dict) -> str:
-  providers, code, consumers = categorize_collaborators(space)
-  result = space['name'] + "\n"
+def make_description(collaborators: dict) -> str:
+  providers, code, consumers = categorize_collaborators(collaborators)
+  result = config.DV_CAGE_ID + "\n"
   result += "Data Providers\n"
   for s in providers:
     result += f"  {s}\n"
@@ -31,12 +28,13 @@ def make_description(space: dict) -> str:
   return result
 
 
-def categorize_collaborators(space: dict) -> tuple[list[str], str, list[str]]:
+def categorize_collaborators(collaborators: list[Collaborator]) -> tuple[list[str], str, list[str]]:
   providers = []
   consumers = []
   code = None
 
-  for c in space['collaborators']:
+  for col in collaborators:
+    c = col.to_dict()
     if c['role'] == 'DataProvider':
       providers.append(get_label_safe(c))
     elif c['role'] == 'CodeProvider':
