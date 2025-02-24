@@ -10,8 +10,8 @@ def connect(location: str, secret_manager_key: str) -> tuple[GCSConnector, duckd
   gcs_config = GCSConfiguration()
   gcs_config.location = location
   gcs_config.file_format = location.split('.')[-1]
-  gcs_config.key_id = creds['key_id']
-  gcs_config.secret = creds['secret']
+  gcs_config.key_id = creds['server']['key_id']
+  gcs_config.secret = creds['server']['secret']
   gcs_conn = GCSConnector(gcs_config)
 
   duckdb_conn = duckdb.connect()

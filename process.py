@@ -57,13 +57,11 @@ if __name__ == "__main__":
   evt_read_bucket = {
     "type": "EX_READ_BUCKET",
     "location": "gs://cage_example/netflix_titles.csv", # optional
-    "secret_manager_key": "configuration_example_gcs" # optional
   }
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
     "location": "gs://cage_example", # optional
-    "secret_manager_key": "configuration_example_gcs", # optional
     "data": {
       "hello": "world",
       "from": "cage"
@@ -73,7 +71,6 @@ if __name__ == "__main__":
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
     "location": "gs://cage_example", # optional
-    "secret_manager_key": "configuration_example_gcs", # optional
     "data": {
       "hello": "world",
       "signed": "data"
