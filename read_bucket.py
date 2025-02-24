@@ -1,7 +1,13 @@
 from dv_utils import log, LogLevel
+from dv_utils.connectors.gcs import GCSConnector
+from dv_utils.client import create_client
+from control_plane_cage_client.api.data_contracts import get_data_contract
+from control_plane_cage_client.models.data_contract import DataContract
 import gcs
 import time
 import config
+import read_space
+import duckdb
 
 def read_file(location: str = None, secret_manager_key: str = None, retry = True):
   try:
@@ -22,4 +28,40 @@ def read_file(location: str = None, secret_manager_key: str = None, retry = True
       return read_file(location, secret_manager_key, False)
     else:
       log(f"could not read file: {e}", LogLevel.ERROR)
+
+def print_file(connector: GCSConnector, duckdb_conn: duckdb.duckdb.DuckDBPyConnection):
+  try:
+    from_statement = connector.get_duckdb_source(options="")
+
+    result = duckdb_conn.sql(f"SELECT COUNT(*) as count FROM {from_statement}").df()
+
+    count = result['count'][0]
+    log(f"found {count} rows", LogLevel.INFO)
+  except Exception as e:
+    log(f"could not read file: {e}", LogLevel.ERROR)
+
+def hydrate_contracts():
+  collabs = read_space.read_collaborators()
+
+  for c in collabs:
+    c_dict = c.to_dict()
+    if c_dict["role"] == "DataProvider" and "dataContract" in c_dict:
+      __hydrate_contract(c_dict)
+
+
+
+def __hydrate_contract(c_dict: dict) -> dict:
+  connector, duckdb_conn = gcs.connect_collorator(c_dict)
+  contract: DataContract = None
+  with create_client() as c:
+    contract = get_data_contract.sync(client=c, contract_id=c_dict["dataContract"])
+
+  if contract:
+    col_id = c_dict.get("label", c_dict["id"])
+    con_id = contract.data_contract.name
+    log(f"Collaborator {col_id} provides contract '{con_id}'", LogLevel.INFO)
+  else:
+    log(f"could not get contract", LogLevel.WARN)
+
+  print_file(connector, duckdb_conn)
       

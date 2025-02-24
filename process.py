@@ -30,6 +30,9 @@ def event_processor(evt: dict):
     secret_manager_key = evt.get("secret_manager_key", None)
     write_bucket.write_signed_data(data, location, secret_manager_key)
 
+  elif evt["type"] == "EX_HYDRATE_CONTRACTS":
+    read_bucket.hydrate_contracts()
+
   log("done processing event", LogLevel.INFO)
 
 
@@ -54,13 +57,11 @@ if __name__ == "__main__":
   evt_read_bucket = {
     "type": "EX_READ_BUCKET",
     "location": "gs://cage_example/netflix_titles.csv", # optional
-    "secret_manager_key": "configuration_example_gcs" # optional
   }
 
   evt_write_bucket = {
     "type": "EX_WRITE_BUCKET",
     "location": "gs://cage_example", # optional
-    "secret_manager_key": "configuration_example_gcs", # optional
     "data": {
       "hello": "world",
       "from": "cage"
@@ -70,14 +71,18 @@ if __name__ == "__main__":
   evt_write_bucket_signed = {
     "type": "EX_WRITE_BUCKET_SIGNED",
     "location": "gs://cage_example", # optional
-    "secret_manager_key": "configuration_example_gcs", # optional
     "data": {
       "hello": "world",
       "signed": "data"
     }
   }
 
-  dispatch_event_local(evt_read_space)
+  evt_hydrate_contract = {
+    "type": "EX_HYDRATE_CONTRACTS"
+  }
+
+  # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
+  dispatch_event_local(evt_hydrate_contract)

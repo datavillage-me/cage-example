@@ -65,7 +65,18 @@ Writes the `data` dict as a json file to GCS bucket.
 
 Creates a json from the dict under `data` and signs it at the secret manager. The result is written to a GCS bucket.
 
+```json
+{
+  "type": "EX_HYDRATE_CONTRACTS"
+}
+```
+
+Hydrates the contracts of the DataProviders that have a data contract linked with a GCS server. It will not perform a quality check.
+This event requires the secret manager to be setup correctly, see the next section.
+
 ## Secrets
+
+### Read bucket/ write bucket
 
 The secrets to access the bucket should be stored in a secret manager as a json in following format
 
@@ -77,6 +88,29 @@ The secrets to access the bucket should be stored in a secret manager as a json 
 ```
 
 The key used to store it in the secret manager, can be passed with the `secret_manager_key` field in the events. If not passed, the default value in `config.SECRET_MANAGER_KEY` will be used.
+
+### Hydrate contracts
+
+The metadata to access the input, including the secrets, should be put in the secret manager in following format:
+
+```json
+{
+  "server": {
+    "server": "gcs-bucket",
+    "description": "A GCS bucket",
+    "format": ".csv",
+    "type": "custom",
+    "custom_type": "gcs",
+    "location": "gcs://cage_example",
+    "path": "netflix_titles.csv",
+    "key_id": "REF:KEY_ID",
+    "secret": "REF:SECRET"
+  },
+  "dataContract": "67adc4a77002de8bba129134"
+}
+```
+
+The key in the secret manager should be `configuration_{collaborator label}`. Make sure the `dataContract` field matches the one in control-plane.
 
 ## Run in cage
 
