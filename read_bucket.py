@@ -55,13 +55,13 @@ def __hydrate_contract(c_dict: dict) -> dict:
   contract: DataContract = None
   with create_client() as c:
     contract = get_data_contract.sync(client=c, contract_id=c_dict["dataContract"])
-  
+
   if contract:
     col_id = c_dict.get("label", c_dict["id"])
     con_id = contract.data_contract.name
     log(f"Collaborator {col_id} provides contract '{con_id}'", LogLevel.INFO)
   else:
-    log(f"could not get contract for collaborator {col_id}", LogLevel.WARN)
+    log(f"could not get contract", LogLevel.WARN)
 
   print_file(connector, duckdb_conn)
       
