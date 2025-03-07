@@ -5,12 +5,15 @@ from control_plane_cage_client.models.collaborator import Collaborator
 import config
 
 def print_space_info():
-  collabs = None
-  with create_client() as c:
-    collabs = get_collaborators.sync(client=c)
+  collabs = read_collaborators()
+
   desc = make_description(collabs)
   log(desc, LogLevel.INFO)
   pass
+
+def read_collaborators() -> list[Collaborator]:
+  with create_client() as c:
+    return get_collaborators.sync(client=c)
 
 def make_description(collaborators: dict) -> str:
   providers, code, consumers = categorize_collaborators(collaborators)
