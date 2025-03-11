@@ -1,8 +1,11 @@
 from dv_utils import log, LogLevel
 from dv_utils.client import create_client
+from dv_utils.secrets import get_secret_for_collaborator
 from control_plane_cage_client.api.collaboration_spaces import get_collaborators
+from control_plane_cage_client.api.collaboration_spaces import get_collaborator
 from control_plane_cage_client.models.collaborator import Collaborator
 import config
+import os
 
 def print_space_info():
   collabs = read_collaborators()
@@ -53,3 +56,34 @@ def get_label_safe(provider: dict) -> str:
     return name
   
   return provider.get("clientId", None)
+
+def read_collaborator(collab_id: str | None, collab_label: str | None):
+  if collab_id is None:
+    if collab_label is None:
+      log("id and label of collab is none", LogLevel.ERROR)
+      return
+    
+    collab_id = os.environ.get(f"ID_{collab_label}", None)
+    if collab_id is None:
+      log("could not get collab id from env variables", LogLevel.ERROR)
+      return
+
+  collab = None
+  with create_client() as c:
+    collab = get_collaborator.sync(collaborator_id=collab_id, client=c)
+  
+  collab_dict = collab.to_dict()
+  name = collab_dict.get("name", "UNKNOWN_NAME")
+  label = collab_dict.get("label", "UNKNOWN_LABEL")
+
+  log(f"Collaborator {collab_id}: name={name}, label={label}", LogLevel.INFO)
+  log(f"Configured keys: {list(collab_dict.keys())}", LogLevel.INFO)
+
+  secret = get_secret_for_collaborator(collaborator_id=collab_id)
+  if secret is None:
+    log(f"Collaborator {collab_id} has no collaborator secret", LogLevel.INFO)
+    return
+  
+  log(f"Collaborator {collab_id} has secret of length {len(secret)}", LogLevel.INFO)
+  
+  

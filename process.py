@@ -1,8 +1,9 @@
-from dv_utils import log, LogLevel, set_event
+from dv_utils import log, LogLevel, set_event, reset_event
 
 import read_space
 import read_bucket
 import write_bucket
+import read_client
 
 
 def event_processor(evt: dict):
@@ -13,6 +14,16 @@ def event_processor(evt: dict):
   log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
+
+  elif evt["type"] == "EX_READ_COLLABORATOR":
+    collab_id = evt.get("id", None)
+    collab_label = evt.get("label", None)
+    read_space.read_collaborator(collab_id=collab_id, collab_label=collab_label)
+
+  elif evt["type"] == "EX_READ_CLIENT_SECRET":
+    client_id = evt.get("client_id", None)
+    secret_id = evt.get("secret_id", None)
+    read_client.read_secret(client_id, secret_id)
 
   elif evt["type"] == "EX_READ_BUCKET":
     location = evt.get("location", None)
@@ -44,6 +55,7 @@ def dispatch_event_local(evt: dict):
   """
   set_event(evt)
   event_processor(evt)
+  reset_event()
 
 if __name__ == "__main__":
   """
@@ -52,6 +64,17 @@ if __name__ == "__main__":
   """
   evt_read_space = {
     "type": "EX_READ_SPACE"
+  }
+
+  evt_read_collaborator = {
+    "type": "EX_READ_COLLABORATOR",
+    "label": "datavillage_local"
+  }
+
+  evt_read_client_secret = {
+    "type": "EX_READ_CLIENT_SECRET",
+    "client_id": "677e4649eb5dfe5f9737f595",
+    "secret_id": "cage-example"
   }
 
   evt_read_bucket = {
@@ -82,7 +105,9 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
+  # dispatch_event_local(evt_read_collaborator)
+  dispatch_event_local(evt_read_client_secret)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  dispatch_event_local(evt_hydrate_contract)
+  # dispatch_event_local(evt_hydrate_contract)

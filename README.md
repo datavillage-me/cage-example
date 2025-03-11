@@ -29,6 +29,26 @@ Reads the details of the space the cage it is deployed for, and prints a summary
 
 ```json
 {
+  "type": "EX_READ_COLLABORATOR",
+  "id": "677e4649eb5dfe5f9737f595", // optional
+  "label": "datavillage" // optional
+}
+```
+
+Reads the details of a collaborator. If set, the `id` is used. Else, it uses the `label` of the collaborator to find the id. If both are not passed, the algorithm will fail.
+
+```json
+{
+  "type": "EX_READ_CLIENT_SECRET",
+  "client_id": "677e4649eb5dfe5f9737f595",
+  "secret_id": "cage-example"
+}
+```
+
+Reads the secret added by the client with an id and prints the length.
+
+```json
+{
   "type": "EX_READ_BUCKET",
   "location": "gs://cage_example/netflix_titles.csv", // optional
   "secret_manager_key": "configuration_example_gcs" // optional
