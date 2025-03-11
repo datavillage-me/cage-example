@@ -1,4 +1,4 @@
-from dv_utils import log, LogLevel, set_event
+from dv_utils import log, LogLevel, set_event, reset_event
 
 import read_space
 import read_bucket
@@ -13,6 +13,11 @@ def event_processor(evt: dict):
   log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
+
+  elif evt["type"] == "EX_READ_COLLABORATOR":
+    collab_id = evt.get("id", None)
+    collab_label = evt.get("label", None)
+    read_space.read_collaborator(collab_id=collab_id, collab_label=collab_label)
 
   elif evt["type"] == "EX_READ_BUCKET":
     location = evt.get("location", None)
@@ -44,6 +49,7 @@ def dispatch_event_local(evt: dict):
   """
   set_event(evt)
   event_processor(evt)
+  reset_event()
 
 if __name__ == "__main__":
   """
@@ -52,6 +58,12 @@ if __name__ == "__main__":
   """
   evt_read_space = {
     "type": "EX_READ_SPACE"
+  }
+
+  evt_read_collaborator = {
+    "type": "EX_READ_COLLABORATOR",
+    "id": "",
+    "label": ""
   }
 
   evt_read_bucket = {
@@ -82,7 +94,8 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
+  dispatch_event_local(evt_read_collaborator)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
-  dispatch_event_local(evt_hydrate_contract)
+  # dispatch_event_local(evt_hydrate_contract)
