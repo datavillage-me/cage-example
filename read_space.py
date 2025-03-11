@@ -71,4 +71,10 @@ def read_collaborator(collab_id: str | None, collab_label: str | None):
   with create_client() as c:
     collab = get_collaborator.sync(collaborator_id=collab_id, client=c)
   
-  print(f"Got collaborator {collab}")
+  collab_dict = collab.to_dict()
+  name = collab_dict.get("name", "UNKNOWN_NAME")
+  label = collab_dict.get("label", "UNKNOWN_LABEL")
+
+  log(f"Collaborator {collab_id}: name={name}, label={label}")
+  log(f"Configured keys: {list(collab_dict.keys())}")
+  
