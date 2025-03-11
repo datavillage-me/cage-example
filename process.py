@@ -3,6 +3,7 @@ from dv_utils import log, LogLevel, set_event, reset_event
 import read_space
 import read_bucket
 import write_bucket
+import read_client
 
 
 def event_processor(evt: dict):
@@ -18,6 +19,11 @@ def event_processor(evt: dict):
     collab_id = evt.get("id", None)
     collab_label = evt.get("label", None)
     read_space.read_collaborator(collab_id=collab_id, collab_label=collab_label)
+
+  elif evt["type"] == "EX_READ_CLIENT_SECRET":
+    client_id = evt.get("client_id", None)
+    secret_id = evt.get("secret_id", None)
+    read_client.read_secret(client_id, secret_id)
 
   elif evt["type"] == "EX_READ_BUCKET":
     location = evt.get("location", None)
@@ -62,7 +68,13 @@ if __name__ == "__main__":
 
   evt_read_collaborator = {
     "type": "EX_READ_COLLABORATOR",
-    "label": "my_c_provider"
+    "label": "datavillage_local"
+  }
+
+  evt_read_client_secret = {
+    "type": "EX_READ_CLIENT_SECRET",
+    "client_id": "677e4649eb5dfe5f9737f595",
+    "secret_id": "cage-example"
   }
 
   evt_read_bucket = {
@@ -93,7 +105,8 @@ if __name__ == "__main__":
   }
 
   # dispatch_event_local(evt_read_space)
-  dispatch_event_local(evt_read_collaborator)
+  # dispatch_event_local(evt_read_collaborator)
+  dispatch_event_local(evt_read_client_secret)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
