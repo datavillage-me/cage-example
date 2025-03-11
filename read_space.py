@@ -1,5 +1,6 @@
 from dv_utils import log, LogLevel
 from dv_utils.client import create_client
+from dv_utils.secrets import get_secret_for_collaborator
 from control_plane_cage_client.api.collaboration_spaces import get_collaborators
 from control_plane_cage_client.api.collaboration_spaces import get_collaborator
 from control_plane_cage_client.models.collaborator import Collaborator
@@ -77,4 +78,12 @@ def read_collaborator(collab_id: str | None, collab_label: str | None):
 
   log(f"Collaborator {collab_id}: name={name}, label={label}", LogLevel.INFO)
   log(f"Configured keys: {list(collab_dict.keys())}", LogLevel.INFO)
+
+  secret = get_secret_for_collaborator(collaborator_id=collab_id)
+  if secret is None:
+    log(f"Collaborator {collab_id} has no collaborator secret", LogLevel.INFO)
+    return
+  
+  log(f"Collaborator {collab_id} has secret of length {len(secret)}", LogLevel.INFO)
+  
   
