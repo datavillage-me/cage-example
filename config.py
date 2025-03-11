@@ -4,7 +4,7 @@ import os
 DATA_FOLDER="/resources/data"
 os.makedirs(DATA_FOLDER, exist_ok=True)
 
-ALGO_VERSION = '0.7.0rc4'
+ALGO_VERSION = '0.7.0'
 CONTROL_PLANE_URL = os.environ['CONTROL_PLANE_URL']
 DV_CAGE_ID = os.environ['DV_CAGE_ID']
 
