@@ -4,6 +4,7 @@ from control_plane_cage_client.api.collaboration_spaces import get_collaborators
 from control_plane_cage_client.api.collaboration_spaces import get_collaborator
 from control_plane_cage_client.models.collaborator import Collaborator
 import config
+import os
 
 def print_space_info():
   collabs = read_collaborators()
@@ -61,11 +62,10 @@ def read_collaborator(collab_id: str | None, collab_label: str | None):
       log("id and label of collab is none", LogLevel.ERROR)
       return
     
-    # TODO: get from env
-    for col in read_collaborators():
-      if col.label == collab_label:
-        collab_id = col.id
-        break
+    collab_id = os.environ.get(f"ID_{collab_label}", None)
+    if collab_id is None:
+      log("could not get collab id from env variables", LogLevel.ERROR)
+      return
 
   collab = None
   with create_client() as c:
@@ -75,6 +75,6 @@ def read_collaborator(collab_id: str | None, collab_label: str | None):
   name = collab_dict.get("name", "UNKNOWN_NAME")
   label = collab_dict.get("label", "UNKNOWN_LABEL")
 
-  log(f"Collaborator {collab_id}: name={name}, label={label}")
-  log(f"Configured keys: {list(collab_dict.keys())}")
+  log(f"Collaborator {collab_id}: name={name}, label={label}", LogLevel.INFO)
+  log(f"Configured keys: {list(collab_dict.keys())}", LogLevel.INFO)
   
