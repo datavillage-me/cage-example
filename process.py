@@ -62,8 +62,7 @@ if __name__ == "__main__":
 
   evt_read_collaborator = {
     "type": "EX_READ_COLLABORATOR",
-    "id": "67b76137bb9f013dc98ec924",
-    "label": "my-c-provider"
+    "label": "my_c_provider"
   }
 
   evt_read_bucket = {
