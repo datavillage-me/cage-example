@@ -1,6 +1,7 @@
 from dv_utils import log, LogLevel
 from dv_utils.client import create_client
 from control_plane_cage_client.api.collaboration_spaces import get_collaborators
+from control_plane_cage_client.api.collaboration_spaces import get_collaborator
 from control_plane_cage_client.models.collaborator import Collaborator
 import config
 
@@ -53,3 +54,21 @@ def get_label_safe(provider: dict) -> str:
     return name
   
   return provider.get("clientId", None)
+
+def read_collaborator(collab_id: str | None, collab_label: str | None):
+  if collab_id is None:
+    if collab_label is None:
+      log("id and label of collab is none", LogLevel.ERROR)
+      return
+    
+    # TODO: get from env
+    for col in read_collaborators():
+      if col.label == collab_label:
+        collab_id = col.id
+        break
+
+  collab = None
+  with create_client() as c:
+    collab = get_collaborator.sync(collaborator_id=collab_id, client=c)
+  
+  print(f"Got collaborator {collab}")
