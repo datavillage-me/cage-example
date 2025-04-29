@@ -4,6 +4,7 @@ import read_space
 import read_bucket
 import write_bucket
 import read_client
+import netflix
 
 
 def event_processor(evt: dict):
@@ -14,6 +15,9 @@ def event_processor(evt: dict):
   log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
+
+  if evt["type"] == "EX_NETFLIX":
+    netflix.run_netflix_example()
 
   elif evt["type"] == "EX_READ_COLLABORATOR":
     collab_id = evt.get("id", None)
@@ -62,6 +66,10 @@ if __name__ == "__main__":
   Only for local use
   Test events without a listener or redis queue set up
   """
+  evt_netflix_case = {
+    "type": "EX_NETFLIX"
+  }
+
   evt_read_space = {
     "type": "EX_READ_SPACE"
   }
@@ -104,9 +112,11 @@ if __name__ == "__main__":
     "type": "EX_HYDRATE_CONTRACTS"
   }
 
+  dispatch_event_local(evt_netflix_case)
+
   # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_collaborator)
-  dispatch_event_local(evt_read_client_secret)
+  # dispatch_event_local(evt_read_client_secret)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
