@@ -1,2 +1,1 @@
-dv-utils==2.0.0rc9
-duckdb
+dv-utils==2.0.0rc10
