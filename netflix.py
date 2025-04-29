@@ -8,7 +8,7 @@ from dv_utils.log_utils import log, LogLevel
 from dv_utils.data_engine import create_client
 
 from dv_data_engine_client.client import Client
-from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator
+from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator, export_collaborator
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
 from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
 from dv_data_engine_client.models.append_collaborator_body import AppendCollaboratorBody
@@ -22,16 +22,20 @@ def run_netflix_example():
   if not __initialize_consumer():
     log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
     return
-  
   log("Succesfully initialized collaborators")
-  results = __query()
-  print(f"found {len(results)} results")
+
+  results = __query()[1:]
+  log(f"found {len(results)} results")
 
   if not __append_results(results):
     log("could not append results. Stopping execution.", LogLevel.ERROR)
     return
-  
   log("appended results")
+
+  if not __export_results():
+    log("could not export results. Stopping execution", LogLevel.ERROR)
+    return
+  log("exported results")
   
 def __mount_provider() -> bool:
   provider_id = os.environ["ID_NETFLIX_TITLES"]
@@ -91,3 +95,10 @@ def __append_results(results: list[list[str]]) -> bool:
   with create_client() as c:
     append_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
     return __wait_for_status(c, consumer_id, "mounted")
+  
+def __export_results() -> bool:
+  consumer_id = os.environ["ID_EXPORT"]
+
+  with create_client() as c:
+    export_collaborator.sync(client=c, collaborator_id=consumer_id)
+    return __wait_for_status(c, consumer_id, "exported")
