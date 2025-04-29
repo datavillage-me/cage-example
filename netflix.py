@@ -15,6 +15,7 @@ from dv_data_engine_client.models.append_collaborator_body import AppendCollabor
 from dv_data_engine_client.types import File
 
 def run_netflix_example():
+  # step 1: mount/initialize the collaborators
   if not __mount_provider():
     log("could not mount provider. Stopping execution", LogLevel.ERROR)
     return
@@ -24,14 +25,17 @@ def run_netflix_example():
     return
   log("Succesfully initialized collaborators")
 
+  # step 2: peform the query (drop the first line because it is the column names)
   results = __query()[1:]
   log(f"found {len(results)} results")
 
+  # step 3: append results to data consumer
   if not __append_results(results):
     log("could not append results. Stopping execution.", LogLevel.ERROR)
     return
   log("appended results")
 
+  # step 4: export data consumer to bucket
   if not __export_results():
     log("could not export results. Stopping execution", LogLevel.ERROR)
     return
