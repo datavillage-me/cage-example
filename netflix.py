@@ -1,28 +1,37 @@
 import os
 import time
 import constants
-from io import StringIO
+from io import StringIO, BytesIO
 import csv
 
 from dv_utils.log_utils import log, LogLevel
 from dv_utils.data_engine import create_client
 
 from dv_data_engine_client.client import Client
-from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator
+from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
 from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
+from dv_data_engine_client.models.append_collaborator_body import AppendCollaboratorBody
+from dv_data_engine_client.types import File
 
 def run_netflix_example():
   if not __mount_provider():
-    log("could not mount provider, stopping execution", LogLevel.ERROR)
+    log("could not mount provider. Stopping execution", LogLevel.ERROR)
     return
   
   if not __initialize_consumer():
-    log("could not initialize consumer, stopping execution.", LogLevel.ERROR)
+    log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
     return
-
+  
+  log("Succesfully initialized collaborators")
   results = __query()
   print(f"found {len(results)} results")
+
+  if not __append_results(results):
+    log("could not append results. Stopping execution.", LogLevel.ERROR)
+    return
+  
+  log("appended results")
   
 def __mount_provider() -> bool:
   provider_id = os.environ["ID_NETFLIX_TITLES"]
@@ -69,3 +78,16 @@ def __query() -> list[list[str]]:
     resp: str = query_collaborator.sync(client=c, collaborator_id=provider_id, body=body)
     reader = csv.reader(StringIO(resp), delimiter=",")
     return [r for r in reader]
+  
+def __append_results(results: list[list[str]]) -> bool:
+  consumer_id = os.environ["ID_EXPORT"] 
+  data = StringIO()
+  writer = csv.writer(data, quoting=csv.QUOTE_NONNUMERIC)
+  writer.writerows(results)
+
+  f = File(payload=BytesIO(data.getvalue().encode()), file_name="data.csv")
+  body = AppendCollaboratorBody(data=f)
+  
+  with create_client() as c:
+    append_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
+    return __wait_for_status(c, consumer_id, "mounted")
