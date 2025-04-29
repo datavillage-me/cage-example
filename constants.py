@@ -17,9 +17,29 @@ columns = [
   }
 ]
 
-"show_id,type,title,director"
-
 query = {
+  "select": [
+    {
+      "property": {
+        "property": "show_id"
+      }
+    },
+        {
+      "property": {
+        "property": "type"
+      }
+    },
+        {
+      "property": {
+        "property": "title"
+      }
+    },
+        {
+      "property": {
+        "property": "director"
+      }
+    },
+  ],
   "where": {
     "equalA": {
       "property": "country"

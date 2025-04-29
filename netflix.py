@@ -1,13 +1,16 @@
 import os
 import time
 import constants
+from io import StringIO
+import csv
 
 from dv_utils.log_utils import log, LogLevel
 from dv_utils.data_engine import create_client
 
 from dv_data_engine_client.client import Client
-from dv_data_engine_client.api.default import mount_collaborator, collaborator_status
+from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
+from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
 
 def run_netflix_example():
   if not __mount_provider():
@@ -18,7 +21,8 @@ def run_netflix_example():
     log("could not initialize consumer, stopping execution.", LogLevel.ERROR)
     return
 
-  print("collaborators mounted")
+  results = __query()
+  print(f"found {len(results)} results")
   
 def __mount_provider() -> bool:
   provider_id = os.environ["ID_NETFLIX_TITLES"]
@@ -56,3 +60,12 @@ def __initialize_consumer() -> bool:
   with create_client() as c:
     mount_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
     return __wait_for_status(c, consumer_id, "initialized")
+  
+def __query() -> list[list[str]]:
+  provider_id = os.environ["ID_NETFLIX_TITLES"]
+  body = QueryCollaboratorBody.from_dict(constants.query)
+
+  with create_client() as c:
+    resp: str = query_collaborator.sync(client=c, collaborator_id=provider_id, body=body)
+    reader = csv.reader(StringIO(resp), delimiter=",")
+    return [r for r in reader]
