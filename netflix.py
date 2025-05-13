@@ -3,10 +3,9 @@ import time
 import constants
 from io import StringIO, BytesIO
 import csv
-
+import traceback
 from dv_utils.log_utils import log, LogLevel
 from dv_utils.data_engine import create_client
-
 from dv_data_engine_client.client import Client
 from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator, export_collaborator
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
@@ -15,37 +14,44 @@ from dv_data_engine_client.models.append_collaborator_body import AppendCollabor
 from dv_data_engine_client.types import File
 
 def run_netflix_example():
-  # step 1: mount/initialize the collaborators
-  if not __mount_provider():
-    log("could not mount provider. Stopping execution", LogLevel.ERROR)
-    return
-  
-  if not __initialize_consumer():
-    log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
-    return
-  log("Succesfully initialized collaborators")
+  try :
+    # step 1: mount/initialize the collaborators
+    if not __mount_provider():
+      log("could not mount provider. Stopping execution", LogLevel.ERROR)
+      return
+    
+    if not __initialize_consumer():
+      log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
+      return
+    log("Succesfully initialized collaborators")
 
-  # step 2: peform the query (drop the first line because it is the column names)
-  results = __query()[1:]
-  log(f"found {len(results)} results")
+    # step 2: peform the query (drop the first line because it is the column names)
+    results = __query()[1:]
+    log(f"found {len(results)} results")
 
-  # step 3: append results to data consumer
-  if not __append_results(results):
-    log("could not append results. Stopping execution.", LogLevel.ERROR)
-    return
-  log("appended results")
+    # step 3: append results to data consumer
+    if not __append_results(results):
+      log("could not append results. Stopping execution.", LogLevel.ERROR)
+      return
+    log("appended results")
 
-  # step 4: export data consumer to bucket
-  if not __export_results():
-    log("could not export results. Stopping execution", LogLevel.ERROR)
-    return
-  log("exported results")
+    # step 4: export data consumer to bucket
+    if not __export_results():
+      log("could not export results. Stopping execution", LogLevel.ERROR)
+      return
+    log("exported results")
+  except Exception:
+    log("Error in event_processor", LogLevel.ERROR)
+    log(traceback.format_exc(), LogLevel.ERROR)
   
 def __mount_provider() -> bool:
   provider_id = os.environ["ID_NETFLIX_TITLES"]
   with create_client() as c:
-    mount_collaborator.sync(client=c, collaborator_id=provider_id, body=MountCollaboratorBody())
-
+    response = mount_collaborator.sync_detailed(client=c, collaborator_id=provider_id, body=MountCollaboratorBody())
+    response_text = response.content.decode("utf-8", errors="replace")
+    if response_text != "":
+      log("ERROR MOUNT PROVIDER -->" + response_text,LogLevel.ERROR)
+      
     # wait for mounting to be completed
     return __wait_for_status(c, provider_id, "mounted")
 
@@ -75,7 +81,11 @@ def __initialize_consumer() -> bool:
   body = MountCollaboratorBody.from_dict({"columns": constants.columns})
 
   with create_client() as c:
-    mount_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
+    response = mount_collaborator.sync_detailed(client=c, collaborator_id=consumer_id, body=body)
+    response_text = response.content.decode("utf-8", errors="replace")
+    if response_text != "":
+      log("ERROR MOUNT CUSTOMER -->" + response_text,LogLevel.ERROR)
+
     return __wait_for_status(c, consumer_id, "initialized")
   
 def __query() -> list[list[str]]:
