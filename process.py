@@ -4,6 +4,7 @@ import read_space
 import read_bucket
 import write_bucket
 import read_client
+import netflix
 
 
 def event_processor(evt: dict):
@@ -11,34 +12,38 @@ def event_processor(evt: dict):
   Process an incoming event. The `evt` dict has at least the field `type`
   Exception raised by this function are handled by the default event listener and reported in the logs.
   """
+  payload = evt.get("payload", {})
   log("event_processor started", LogLevel.INFO)
   if evt["type"] == "EX_READ_SPACE":
     read_space.print_space_info()
 
+  if evt["type"] == "EX_NETFLIX":
+    netflix.run_netflix_example()
+
   elif evt["type"] == "EX_READ_COLLABORATOR":
-    collab_id = evt.get("id", None)
-    collab_label = evt.get("label", None)
+    collab_id = payload.get("id", None)
+    collab_label = payload.get("label", None)
     read_space.read_collaborator(collab_id=collab_id, collab_label=collab_label)
 
   elif evt["type"] == "EX_READ_CLIENT_SECRET":
-    client_id = evt.get("client_id", None)
-    secret_id = evt.get("secret_id", None)
+    client_id = payload.get("client_id", None)
+    secret_id = payload.get("secret_id", None)
     read_client.read_secret(client_id, secret_id)
 
   elif evt["type"] == "EX_READ_BUCKET":
-    location = evt.get("location", None)
-    secret_manager_key = evt.get("secret_manager_key", None)
+    location = payload.get("location", None)
+    secret_manager_key = payload.get("secret_manager_key", None)
     read_bucket.read_file(location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET":
-    location = evt.get("location", None)
-    secret_manager_key = evt.get("secret_manager_key", None)
+    location = payload.get("location", None)
+    secret_manager_key = payload.get("secret_manager_key", None)
     write_bucket.write_data(evt["data"], location, secret_manager_key)
 
   elif evt["type"] == "EX_WRITE_BUCKET_SIGNED":
     data = evt['data']
-    location = evt.get("location", None)
-    secret_manager_key = evt.get("secret_manager_key", None)
+    location = payload.get("location", None)
+    secret_manager_key = payload.get("secret_manager_key", None)
     write_bucket.write_signed_data(data, location, secret_manager_key)
 
   elif evt["type"] == "EX_HYDRATE_CONTRACTS":
@@ -62,6 +67,10 @@ if __name__ == "__main__":
   Only for local use
   Test events without a listener or redis queue set up
   """
+  evt_netflix_case = {
+    "type": "EX_NETFLIX"
+  }
+
   evt_read_space = {
     "type": "EX_READ_SPACE"
   }
@@ -104,9 +113,11 @@ if __name__ == "__main__":
     "type": "EX_HYDRATE_CONTRACTS"
   }
 
+  dispatch_event_local(evt_netflix_case)
+
   # dispatch_event_local(evt_read_space)
   # dispatch_event_local(evt_read_collaborator)
-  dispatch_event_local(evt_read_client_secret)
+  # dispatch_event_local(evt_read_client_secret)
   # dispatch_event_local(evt_read_bucket)
   # dispatch_event_local(evt_write_bucket)
   # dispatch_event_local(evt_write_bucket_signed)
