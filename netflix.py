@@ -3,13 +3,14 @@ import time
 import constants
 from io import StringIO, BytesIO
 import csv
+import json
 
 from dv_utils.log_utils import log, LogLevel
 from dv_utils.data_engine import create_client
 
 from dv_data_engine_client.client import Client
 from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator, export_collaborator
-from dv_data_engine_client.api.quality import start_quality_validation
+from dv_data_engine_client.api.quality import start_quality_validation, get_quality_report
 from dv_data_engine_client.models.start_quality_validation_response_201 import StartQualityValidationResponse201
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
 from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
@@ -29,6 +30,11 @@ def run_netflix_example():
     log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
     return
   log("Succesfully initialized collaborators")
+
+  # step 2: validate provider
+  if not __validate_collaborator(provider_id):
+    log(f"validation of provider didn't succeed. Stopping execution.", LogLevel.ERROR)
+    return
 
   # step 3: peform the query (drop the first line because it is the column names)
   results = __query_collaborator(provider_id)[1:]
@@ -81,7 +87,32 @@ def __validate_collaborator(collaborator_id: str) -> bool:
       return False
     
     report_id = resp.to_dict()["id"]
-    print(f"Got report id {report_id}")
+    return __check_quality_report(c, report_id)
+
+def __check_quality_report(client: Client, report_id: str) -> bool:
+  report = __get_finished_report(client, report_id)
+  if report is None:
+    log("could not get quality report", LogLevel.ERROR)
+    return False
+  
+  fail = report["fail"]
+  error = report["error"]
+  
+  return len(fail) == 0 and len(error) == 0
+
+def __get_finished_report(client: Client, report_id: str) -> object:
+  max_tries = 10
+  tries = 0
+  sleep_s = 1
+  while tries < max_tries:
+    # there is something wrong with the lib: the parsing of 200 response is not happening so I'll do it here for now
+    resp = get_quality_report.sync_detailed(report_id=report_id, client=client)
+    resp_json = json.loads(resp.content)
+    time.sleep(sleep_s)
+    tries += 1
+    if resp_json["status"] == "finished":
+      return resp_json
+
 
 def __initialize_consumer(consumer_id: str) -> bool:
   body = MountCollaboratorBody.from_dict({"columns": constants.columns})
