@@ -46,7 +46,13 @@ def run_netflix_example():
     return
   log("appended results")
 
-  # step 5: export data consumer to bucket
+  # step 5: validate consumer
+  if not __validate_collaborator(consumer_id):
+    log("could not validate consumer. Stopping execution.", LogLevel.ERROR)
+    return
+  log("validated consumer") 
+
+  # step 6: export data consumer to bucket
   if not __export_collaborator(consumer_id):
     log("could not export results. Stopping execution", LogLevel.ERROR)
     return
