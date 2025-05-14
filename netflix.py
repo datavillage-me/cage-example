@@ -9,6 +9,8 @@ from dv_utils.data_engine import create_client
 
 from dv_data_engine_client.client import Client
 from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator, export_collaborator
+from dv_data_engine_client.api.quality import start_quality_validation
+from dv_data_engine_client.models.start_quality_validation_response_201 import StartQualityValidationResponse201
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
 from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
 from dv_data_engine_client.models.append_collaborator_body import AppendCollaboratorBody
@@ -25,17 +27,17 @@ def run_netflix_example():
     return
   log("Succesfully initialized collaborators")
 
-  # step 2: peform the query (drop the first line because it is the column names)
+  # step 3: peform the query (drop the first line because it is the column names)
   results = __query()[1:]
   log(f"found {len(results)} results")
 
-  # step 3: append results to data consumer
+  # step 4: append results to data consumer
   if not __append_results(results):
     log("could not append results. Stopping execution.", LogLevel.ERROR)
     return
   log("appended results")
 
-  # step 4: export data consumer to bucket
+  # step 5: export data consumer to bucket
   if not __export_results():
     log("could not export results. Stopping execution", LogLevel.ERROR)
     return
@@ -69,6 +71,15 @@ def __get_collab_status(client: Client, collab_id: str) -> str:
   resp = collaborator_status.sync(client=client, collaborator_id=collab_id)
   return resp.to_dict()["status"]  
 
+def __validate_collaborator(collaborator_id: str) -> bool:
+  with create_client() as c:
+    resp = start_quality_validation.sync(collaborator_id=collaborator_id, client=c)
+    if not isinstance(resp, StartQualityValidationResponse201):
+      log(f"could not start quality validation. Got {resp}", LogLevel.ERROR)
+      return False
+    
+    report_id = resp.to_dict()["id"]
+    print(f"Got report id {report_id}")
 
 def __initialize_consumer() -> bool:
   consumer_id = os.environ["ID_EXPORT"]
