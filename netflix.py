@@ -17,34 +17,36 @@ from dv_data_engine_client.models.append_collaborator_body import AppendCollabor
 from dv_data_engine_client.types import File
 
 def run_netflix_example():
+  provider_id = os.environ["ID_NETFLIX_TITLES"]
+  consumer_id = os.environ["ID_EXPORT"]
+
   # step 1: mount/initialize the collaborators
-  if not __mount_provider():
+  if not __mount_provider(provider_id):
     log("could not mount provider. Stopping execution", LogLevel.ERROR)
     return
   
-  if not __initialize_consumer():
+  if not __initialize_consumer(consumer_id):
     log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
     return
   log("Succesfully initialized collaborators")
 
   # step 3: peform the query (drop the first line because it is the column names)
-  results = __query()[1:]
+  results = __query_collaborator(provider_id)[1:]
   log(f"found {len(results)} results")
 
   # step 4: append results to data consumer
-  if not __append_results(results):
+  if not __append_results(consumer_id, results):
     log("could not append results. Stopping execution.", LogLevel.ERROR)
     return
   log("appended results")
 
   # step 5: export data consumer to bucket
-  if not __export_results():
+  if not __export_collaborator(consumer_id):
     log("could not export results. Stopping execution", LogLevel.ERROR)
     return
   log("exported results")
   
-def __mount_provider() -> bool:
-  provider_id = os.environ["ID_NETFLIX_TITLES"]
+def __mount_provider(provider_id: str) -> bool:
   with create_client() as c:
     mount_collaborator.sync(client=c, collaborator_id=provider_id, body=MountCollaboratorBody())
 
@@ -81,25 +83,22 @@ def __validate_collaborator(collaborator_id: str) -> bool:
     report_id = resp.to_dict()["id"]
     print(f"Got report id {report_id}")
 
-def __initialize_consumer() -> bool:
-  consumer_id = os.environ["ID_EXPORT"]
+def __initialize_consumer(consumer_id: str) -> bool:
   body = MountCollaboratorBody.from_dict({"columns": constants.columns})
 
   with create_client() as c:
     mount_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
     return __wait_for_status(c, consumer_id, "initialized")
   
-def __query() -> list[list[str]]:
-  provider_id = os.environ["ID_NETFLIX_TITLES"]
+def __query_collaborator(collaborator_id: str) -> list[list[str]]:
   body = QueryCollaboratorBody.from_dict(constants.query)
 
   with create_client() as c:
-    resp: str = query_collaborator.sync(client=c, collaborator_id=provider_id, body=body)
+    resp: str = query_collaborator.sync(client=c, collaborator_id=collaborator_id, body=body)
     reader = csv.reader(StringIO(resp), delimiter=",")
     return [r for r in reader]
   
-def __append_results(results: list[list[str]]) -> bool:
-  consumer_id = os.environ["ID_EXPORT"] 
+def __append_results(collaborator_id: str, results: list[list[str]]) -> bool:
   data = StringIO()
   writer = csv.writer(data, quoting=csv.QUOTE_NONNUMERIC)
   writer.writerows(results)
@@ -108,12 +107,10 @@ def __append_results(results: list[list[str]]) -> bool:
   body = AppendCollaboratorBody(data=f)
   
   with create_client() as c:
-    append_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
-    return __wait_for_status(c, consumer_id, "mounted")
+    append_collaborator.sync(client=c, collaborator_id=collaborator_id, body=body)
+    return __wait_for_status(c, collaborator_id, "mounted")
   
-def __export_results() -> bool:
-  consumer_id = os.environ["ID_EXPORT"]
-
+def __export_collaborator(collaborator_id: str) -> bool:
   with create_client() as c:
-    export_collaborator.sync(client=c, collaborator_id=consumer_id)
-    return __wait_for_status(c, consumer_id, "exported")
+    export_collaborator.sync(client=c, collaborator_id=collaborator_id)
+    return __wait_for_status(c, collaborator_id, "exported")
