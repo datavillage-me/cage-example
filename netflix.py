@@ -12,6 +12,7 @@ from dv_data_engine_client.client import Client
 from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator, export_collaborator
 from dv_data_engine_client.api.quality import start_quality_validation, get_quality_report
 from dv_data_engine_client.models.start_quality_validation_response_201 import StartQualityValidationResponse201
+from dv_data_engine_client.models.finished_report import FinishedReport
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
 from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
 from dv_data_engine_client.models.append_collaborator_body import AppendCollaboratorBody
@@ -111,13 +112,12 @@ def __get_finished_report(client: Client, report_id: str) -> object:
   tries = 0
   sleep_s = 1
   while tries < max_tries:
-    # there is something wrong with the lib: the parsing of 200 response is not happening so I'll do it here for now
-    resp = get_quality_report.sync_detailed(report_id=report_id, client=client)
-    resp_json = json.loads(resp.content)
     time.sleep(sleep_s)
     tries += 1
-    if resp_json["status"] == "finished":
-      return resp_json
+    resp = get_quality_report.sync(report_id=report_id, client=client)
+    if isinstance(resp, FinishedReport):
+      return resp.to_dict()
+  return None
 
 
 def __initialize_consumer(consumer_id: str) -> bool:
