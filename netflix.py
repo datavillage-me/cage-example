@@ -3,46 +3,63 @@ import time
 import constants
 from io import StringIO, BytesIO
 import csv
+import json
 
 from dv_utils.log_utils import log, LogLevel
 from dv_utils.data_engine import create_client
 
 from dv_data_engine_client.client import Client
 from dv_data_engine_client.api.default import mount_collaborator, collaborator_status, query_collaborator, append_collaborator, export_collaborator
+from dv_data_engine_client.api.quality import start_quality_validation, get_quality_report
+from dv_data_engine_client.models.start_quality_validation_response_201 import StartQualityValidationResponse201
+from dv_data_engine_client.models.finished_report import FinishedReport
 from dv_data_engine_client.models.mount_collaborator_body import MountCollaboratorBody
 from dv_data_engine_client.models.query_collaborator_body import QueryCollaboratorBody
 from dv_data_engine_client.models.append_collaborator_body import AppendCollaboratorBody
 from dv_data_engine_client.types import File
 
 def run_netflix_example():
+  provider_id = os.environ["ID_NETFLIX_TITLES"]
+  consumer_id = os.environ["ID_EXPORT"]
+
   # step 1: mount/initialize the collaborators
-  if not __mount_provider():
+  if not __mount_provider(provider_id):
     log("could not mount provider. Stopping execution", LogLevel.ERROR)
     return
   
-  if not __initialize_consumer():
+  if not __initialize_consumer(consumer_id):
     log("could not initialize consumer. Stopping execution.", LogLevel.ERROR)
     return
   log("Succesfully initialized collaborators")
 
-  # step 2: peform the query (drop the first line because it is the column names)
-  results = __query()[1:]
+  # step 2: validate provider
+  if not __validate_collaborator(provider_id):
+    log(f"validation of provider didn't succeed. Stopping execution.", LogLevel.ERROR)
+    return
+
+  # step 3: peform the query (drop the first line because it is the column names)
+  results = __query_collaborator(provider_id)[1:]
   log(f"found {len(results)} results")
 
-  # step 3: append results to data consumer
-  if not __append_results(results):
+  # step 4: append results to data consumer
+  if not __append_results(consumer_id, results):
     log("could not append results. Stopping execution.", LogLevel.ERROR)
     return
   log("appended results")
 
-  # step 4: export data consumer to bucket
-  if not __export_results():
+  # step 5: validate consumer
+  if not __validate_collaborator(consumer_id):
+    log("could not validate consumer. Stopping execution.", LogLevel.ERROR)
+    return
+  log("validated consumer") 
+
+  # step 6: export data consumer to bucket
+  if not __export_collaborator(consumer_id):
     log("could not export results. Stopping execution", LogLevel.ERROR)
     return
   log("exported results")
   
-def __mount_provider() -> bool:
-  provider_id = os.environ["ID_NETFLIX_TITLES"]
+def __mount_provider(provider_id: str) -> bool:
   with create_client() as c:
     mount_collaborator.sync(client=c, collaborator_id=provider_id, body=MountCollaboratorBody())
 
@@ -69,26 +86,56 @@ def __get_collab_status(client: Client, collab_id: str) -> str:
   resp = collaborator_status.sync(client=client, collaborator_id=collab_id)
   return resp.to_dict()["status"]  
 
+def __validate_collaborator(collaborator_id: str) -> bool:
+  with create_client() as c:
+    resp = start_quality_validation.sync(collaborator_id=collaborator_id, client=c)
+    if not isinstance(resp, StartQualityValidationResponse201):
+      log(f"could not start quality validation. Got {resp}", LogLevel.ERROR)
+      return False
+    
+    report_id = resp.to_dict()["id"]
+    return __check_quality_report(c, report_id)
 
-def __initialize_consumer() -> bool:
-  consumer_id = os.environ["ID_EXPORT"]
+def __check_quality_report(client: Client, report_id: str) -> bool:
+  report = __get_finished_report(client, report_id)
+  if report is None:
+    log("could not get quality report", LogLevel.ERROR)
+    return False
+  
+  fail = report["fail"]
+  error = report["error"]
+  
+  return len(fail) == 0 and len(error) == 0
+
+def __get_finished_report(client: Client, report_id: str) -> object:
+  max_tries = 10
+  tries = 0
+  sleep_s = 1
+  while tries < max_tries:
+    time.sleep(sleep_s)
+    tries += 1
+    resp = get_quality_report.sync(report_id=report_id, client=client)
+    if isinstance(resp, FinishedReport):
+      return resp.to_dict()
+  return None
+
+
+def __initialize_consumer(consumer_id: str) -> bool:
   body = MountCollaboratorBody.from_dict({"columns": constants.columns})
 
   with create_client() as c:
     mount_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
     return __wait_for_status(c, consumer_id, "initialized")
   
-def __query() -> list[list[str]]:
-  provider_id = os.environ["ID_NETFLIX_TITLES"]
+def __query_collaborator(collaborator_id: str) -> list[list[str]]:
   body = QueryCollaboratorBody.from_dict(constants.query)
 
   with create_client() as c:
-    resp: str = query_collaborator.sync(client=c, collaborator_id=provider_id, body=body)
+    resp: str = query_collaborator.sync(client=c, collaborator_id=collaborator_id, body=body)
     reader = csv.reader(StringIO(resp), delimiter=",")
     return [r for r in reader]
   
-def __append_results(results: list[list[str]]) -> bool:
-  consumer_id = os.environ["ID_EXPORT"] 
+def __append_results(collaborator_id: str, results: list[list[str]]) -> bool:
   data = StringIO()
   writer = csv.writer(data, quoting=csv.QUOTE_NONNUMERIC)
   writer.writerows(results)
@@ -97,12 +144,10 @@ def __append_results(results: list[list[str]]) -> bool:
   body = AppendCollaboratorBody(data=f)
   
   with create_client() as c:
-    append_collaborator.sync(client=c, collaborator_id=consumer_id, body=body)
-    return __wait_for_status(c, consumer_id, "mounted")
+    append_collaborator.sync(client=c, collaborator_id=collaborator_id, body=body)
+    return __wait_for_status(c, collaborator_id, "mounted")
   
-def __export_results() -> bool:
-  consumer_id = os.environ["ID_EXPORT"]
-
+def __export_collaborator(collaborator_id: str) -> bool:
   with create_client() as c:
-    export_collaborator.sync(client=c, collaborator_id=consumer_id)
-    return __wait_for_status(c, consumer_id, "exported")
+    export_collaborator.sync(client=c, collaborator_id=collaborator_id)
+    return __wait_for_status(c, collaborator_id, "exported")
